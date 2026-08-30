@@ -61,6 +61,7 @@ class ForecastPoint(BaseModel):
     lat: float
     lon: float
     timestamp: datetime
+    uncertainty_km: Optional[float] = None
 
 
 class ForecastPath(BaseModel):

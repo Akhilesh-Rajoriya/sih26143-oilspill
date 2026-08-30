@@ -10,7 +10,7 @@ def compute_bbox(lat, lon, radius_deg=1.0):
     return west, east, south, north
 
 def fetch_ocean_currents(slick: SlickDetection, out_path: str,
-                          radius_deg=1.0, hours_before=72, hours_after=48):
+                          radius_deg=2.5, hours_before=72, hours_after=48):
     """
     Fetches hourly ocean surface current (utotal, vtotal) around a detected slick's centroid,
     covering [slick.timestamp - hours_before, slick.timestamp + hours_after].
