@@ -66,6 +66,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           url="https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           maxZoom={16}
         />
+        {/* Geographic Reference Labels (Cities, Ports, Coastal Boundaries) */}
+        <TileLayer
+          url="https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
+        />
 
         {scenario && <MapAutoRecenter lat={centerLat} lon={centerLon} />}
 

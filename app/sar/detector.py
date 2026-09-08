@@ -81,32 +81,38 @@ class SARSpillDetector:
 
     def preprocess_sar(self, raster: np.ndarray, target_size: Tuple[int, int] = (512, 512)) -> Tuple[torch.Tensor, Tuple[int, int]]:
         """
-        Preprocesses SAR radar raster, preserving BOTH VV and VH channels
-        (matching the training pipeline exactly - each channel normalized separately).
+        Preprocesses SAR radar raster, preserving BOTH VV and VH channels.
+        Optimized for cloud memory limits: resizes before normalization
+        to keep memory footprint under 5MB instead of 130MB+.
         """
         if raster.ndim == 2:
-            # Single channel provided - duplicate to fill both expected channels
             raster = np.stack([raster, raster], axis=0)
 
-        img = raster.astype(np.float32)
-        orig_shape = img.shape[1:]
+        orig_shape = raster.shape[1:]
 
-        normalized = np.zeros_like(img)
+        # Downsample large rasters immediately to target_size to prevent OOM
+        if orig_shape[0] > target_size[0] or orig_shape[1] > target_size[1]:
+            c0 = cv2.resize(raster[0].astype(np.float32), (target_size[1], target_size[0]), interpolation=cv2.INTER_AREA)
+            c1 = cv2.resize(raster[1].astype(np.float32), (target_size[1], target_size[0]), interpolation=cv2.INTER_AREA)
+            img = np.stack([c0, c1], axis=0)
+        else:
+            img = raster.astype(np.float32)
+
+        # In-place channel normalization
         for c in range(img.shape[0]):
-            mean = img[c].mean()
-            std = img[c].std()
-            normalized[c] = (img[c] - mean) / (std + 1e-8)
+            m = float(img[c].mean())
+            s = float(img[c].std())
+            img[c] = (img[c] - m) / (s + 1e-8)
 
-        tensor = torch.from_numpy(normalized).unsqueeze(0)
-        tensor = torch.nn.functional.interpolate(tensor, size=target_size, mode="bilinear", align_corners=False)
-        return tensor.to(self.device), orig_shape
+        tensor = torch.from_numpy(img).unsqueeze(0)
+        return tensor.to(self.device), target_size
 
     def detect_mask(self, raster: np.ndarray) -> Tuple[np.ndarray, str, float]:
         """
         Infers binary oil spill mask using the trained U-Net, with adaptive
         thresholding as a transparent fallback. Returns (mask, method_used, confidence).
         """
-        tensor, orig_shape = self.preprocess_sar(raster)
+        tensor, working_shape = self.preprocess_sar(raster)
         pred_mask = None
         mean_confidence = 0.0
         method_used = "unet"
@@ -115,11 +121,13 @@ class SARSpillDetector:
             with torch.no_grad():
                 logits = self.model(tensor)
                 probs = torch.sigmoid(logits).squeeze().cpu().numpy()
-                pred_binary = (probs > 0.5).astype(np.uint8)
-                pred_mask = cv2.resize(pred_binary, (orig_shape[1], orig_shape[0]), interpolation=cv2.INTER_NEAREST)
-                detected_pixels = probs[pred_binary > 0]
-                mean_confidence = float(detected_pixels.mean()) if detected_pixels.size > 0 else 0.0
-                print(f"[SAR Detector] U-Net raw prob stats: min={probs.min():.4f}, max={probs.max():.4f}, mean={probs.mean():.4f}")
+                pred_mask = (probs > 0.5).astype(np.uint8)
+                detected_pixels = probs[pred_mask > 0]
+                if len(detected_pixels) > 0:
+                    mean_confidence = float(detected_pixels.mean())
+                else:
+                    mean_confidence = float(probs.max())
+                del tensor, logits, probs
 
         if pred_mask is None or np.sum(pred_mask) < 25:
             method_used = "classical_fallback"

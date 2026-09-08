@@ -14,24 +14,21 @@ class VectorFieldLookup:
     """
 
     def __init__(self, wind_path: str, current_path: str):
-        wind_ds = xr.open_dataset(wind_path)
-        current_ds = xr.open_dataset(current_path).isel(depth=0)
+        with xr.open_dataset(wind_path) as wind_ds:
+            self.wind_lat = wind_ds["latitude"].values.astype(np.float32)
+            self.wind_lon = wind_ds["longitude"].values.astype(np.float32)
+            self.wind_time = wind_ds["valid_time"].values
+            self.wind_u = wind_ds["u10"].values.astype(np.float32)
+            self.wind_v = wind_ds["v10"].values.astype(np.float32)
 
-        # Wind arrays
-        self.wind_lat = wind_ds["latitude"].values
-        self.wind_lon = wind_ds["longitude"].values
-        self.wind_time = wind_ds["valid_time"].values
-        self.wind_u = wind_ds["u10"].values  # shape: (time, lat, lon)
-        self.wind_v = wind_ds["v10"].values
+        with xr.open_dataset(current_path) as current_raw:
+            current_ds = current_raw.isel(depth=0)
+            self.cur_lat = current_ds["latitude"].values.astype(np.float32)
+            self.cur_lon = current_ds["longitude"].values.astype(np.float32)
+            self.cur_time = current_ds["time"].values
+            self.cur_u = current_ds["utotal"].values.astype(np.float32)
+            self.cur_v = current_ds["vtotal"].values.astype(np.float32)
 
-        # Current arrays
-        self.cur_lat = current_ds["latitude"].values
-        self.cur_lon = current_ds["longitude"].values
-        self.cur_time = current_ds["time"].values
-        self.cur_u = current_ds["utotal"].values
-        self.cur_v = current_ds["vtotal"].values
-
-        # Ensure ascending order for searchsorted to work correctly
         self._wind_lat_asc = self.wind_lat[0] < self.wind_lat[-1]
         self._cur_lat_asc = self.cur_lat[0] < self.cur_lat[-1]
 

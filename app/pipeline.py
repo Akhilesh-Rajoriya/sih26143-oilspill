@@ -3,6 +3,7 @@ Master Pipeline Orchestrator for SIH26143.
 Chains end-to-end execution:
 SAR Detection -> Lagrangian Drift Modeling (Hindcast + Forecast) -> AIS Attribution
 """
+import gc
 import io
 import os
 import time
@@ -96,6 +97,9 @@ def run_pipeline(
         slick_id=slick_id,
         confidence=confidence,
     )
+    # Reclaim raster memory immediately for 512MB cloud servers
+    del sar_raster, mask
+    gc.collect()
 
     # 3. Load Metocean Environmental Field
     if not os.path.exists(wind_nc) or not os.path.exists(currents_nc):
