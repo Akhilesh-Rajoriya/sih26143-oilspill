@@ -1,0 +1,40 @@
+# SIH26143 Project Guidelines & Rules
+
+## Project Overview
+- **Problem Statement 143:** Satellite-based marine oil spill detection (SAR), Lagrangian drift hindcast/forecast (ERA5 wind + CMEMS currents), and AIS spatio-temporal correlation to rank candidate vessels responsible for the spill.
+- **Key Target Stakeholders:** NTRO, Indian Coast Guard, State Pollution Control Boards, Port Authorities.
+
+---
+
+## Core Rules & Architecture Conventions
+
+### 1. Data Contracts & Schemas
+- Always adhere to and import from `schemas.py` (`SARScene`, `SlickDetection`, `OriginWindow`, `ForecastPath`, `AISTrack`, `VesselScore`, etc.).
+- Never invent ad-hoc JSON payloads or dict shapes without modeling them in `schemas.py`.
+- Coordinate Order Convention: **`(latitude, longitude)`** across all Python functions and internal schemas. When outputting GeoJSON for web maps, ensure conversion to `[longitude, latitude]` is explicit and documented.
+
+### 2. High-Performance Physics & Vector Fields (`drift_model.py`)
+- **NEVER** use repeated `xarray.interp()` inside the particle drift simulation loop.
+- Use `VectorFieldLookup` pattern with pre-loaded NumPy arrays and `np.searchsorted` for nearest-neighbor lookups (~0.18s vs ~120s runtime).
+- Always guard against coastline NaNs and handle particle beaching / boundary exit gracefully (early exit / reduction without crashes).
+- Monte Carlo particle ensembles: Use standard 20 particles for hindcast, 10 particles for forecast.
+
+### 3. Vessel Attribution Design Principles
+- Attribution is **ALWAYS a probability ranking**, never a single defamatory verdict.
+- Output models must return `VesselScore` with breakdown: `proximity_score`, `trajectory_score`, `anomaly_score`, `total_score`, and `anomaly_flags`.
+- Confidence intervals and uncertainty radii (`radius_km`, `uncertainty_km`) must accompany every prediction.
+
+### 4. Environmental Data Ingestion (`environmental_data.py`, `fetch_currents.py`)
+- CDS API (ERA5 Wind): Always split requests by `(year, month)` to avoid the CDS multi-month cross-product bug, then merge via `xarray.concat`.
+- CMEMS (Ocean Currents): Pull from the hourly SMOC merged product (`cmems_mod_glo_phy_anfc_merged-uv_PT1H-i`).
+- Handle credentials cleanly via environment variables or standard config paths (`~/.cdsapirc`, `.copernicusmarine/`).
+
+### 5. Backend & Frontend Standards
+- **Backend:** FastAPI, Python 3.10+, asynchronous endpoints, strict Pydantic validation, CORS configured for frontend development.
+- **Frontend / GIS:** Modern responsive UI (dark mode/glassmorphism design), Leaflet or MapLibre GL for GIS rendering, time-slider controls for drift playback, candidate vessel inspection drawer.
+
+---
+
+## Testing & Quality Control
+- Run `python test_drift_model.py` after modifying physics calculations.
+- Maintain assertions: probabilities $\in [0, 1]$, origin radius $> 0$, forecast starts at detection centroid with zero initial uncertainty.

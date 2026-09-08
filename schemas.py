@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from enum import Enum
 
 
@@ -96,3 +97,17 @@ class VesselScore(BaseModel):
     total_score: float = Field(ge=0, le=1)
     rank: int
     anomaly_flags: List[str] = []
+
+
+# ---------- 4. Orchestration & Service Result ----------
+
+class ScenarioResult(BaseModel):
+    scenario_id: str
+    timestamp: datetime
+    slick: SlickDetection
+    origin: OriginWindow
+    forecast: ForecastPath
+    candidates: List[VesselScore]
+    candidate_tracks: List[AISTrack] = []
+    execution_time_seconds: float
+    metadata: Dict[str, Any] = Field(default_factory=dict)

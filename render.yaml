@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: sih26143-oilspill
+    env: docker
+    plan: free
+    region: oregon
+    autoDeploy: true
+
