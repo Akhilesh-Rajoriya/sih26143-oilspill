@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ScenarioResult, SystemHealth, RegionPreset } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: API_BASE,

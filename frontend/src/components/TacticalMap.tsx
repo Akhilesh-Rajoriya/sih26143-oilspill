@@ -61,10 +61,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         zoomControl={true}
         attributionControl={false}
       >
-        {/* CartoDB Dark Matter Tactical Basemap */}
+        {/* Esri World Dark Gray Tactical Basemap (No API Key Required) */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          maxZoom={19}
+          url="https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
         />
 
         {scenario && <MapAutoRecenter lat={centerLat} lon={centerLon} />}
