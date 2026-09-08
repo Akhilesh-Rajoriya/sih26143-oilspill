@@ -93,13 +93,20 @@ def get_presets() -> Dict[str, Any]:
     }
 
 
+# In-memory cache for instant < 0.05s response on cloud instances
+_DEFAULT_SCENARIO_CACHE = None
+
+
 @app.post("/api/v1/scenarios/run-default", response_model=ScenarioResult)
 def run_default_scenario() -> ScenarioResult:
     """
     Executes the flagship Mumbai High offshore scenario.
-    Uses pre-cached Sentinel-1 SAR and Metocean NetCDF fields.
-    Executes in ~2.4 seconds on GPU.
+    Caches result in-memory so subsequent clicks are instantaneous (< 0.05s).
     """
+    global _DEFAULT_SCENARIO_CACHE
+    if _DEFAULT_SCENARIO_CACHE is not None:
+        return _DEFAULT_SCENARIO_CACHE
+
     try:
         result = run_pipeline(
             sar_source=DEFAULT_SAR_TEST_IMAGE,
@@ -110,6 +117,7 @@ def run_default_scenario() -> ScenarioResult:
             currents_nc=DEFAULT_CURRENTS_NC,
             ais_mode="synthetic",
         )
+        _DEFAULT_SCENARIO_CACHE = result
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline execution failed: {str(e)}")
