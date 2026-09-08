@@ -1,0 +1,725 @@
+{
+  "scenario_id": "SCN_mumbai_flagship_spill_1788895057",
+  "timestamp": "2024-01-03T10:00:00",
+  "slick": {
+    "slick_id": "mumbai_flagship_spill",
+    "centroid_lat": 18.87568,
+    "centroid_lon": 72.82357,
+    "timestamp": "2024-01-03T10:00:00",
+    "polygon": [
+      [
+        18.9875,
+        72.83594
+      ],
+      [
+        18.97969,
+        72.82188
+      ],
+      [
+        18.97188,
+        72.82188
+      ],
+      [
+        18.96406,
+        72.82969
+      ],
+      [
+        18.95625,
+        72.82812
+      ],
+      [
+        18.95,
+        72.8375
+      ],
+      [
+        18.93906,
+        72.82969
+      ],
+      [
+        18.93125,
+        72.82969
+      ],
+      [
+        18.92031,
+        72.81406
+      ],
+      [
+        18.9125,
+        72.81562
+      ],
+      [
+        18.90469,
+        72.80781
+      ],
+      [
+        18.89688,
+        72.80938
+      ],
+      [
+        18.89531,
+        72.82656
+      ],
+      [
+        18.88594,
+        72.81875
+      ],
+      [
+        18.86719,
+        72.81562
+      ],
+      [
+        18.87031,
+        72.82656
+      ],
+      [
+        18.86406,
+        72.82812
+      ],
+      [
+        18.82344,
+        72.79844
+      ],
+      [
+        18.81563,
+        72.77344
+      ],
+      [
+        18.80937,
+        72.76875
+      ],
+      [
+        18.81094,
+        72.75781
+      ],
+      [
+        18.80313,
+        72.75938
+      ],
+      [
+        18.79375,
+        72.74375
+      ],
+      [
+        18.79375,
+        72.76094
+      ],
+      [
+        18.78125,
+        72.77031
+      ],
+      [
+        18.79063,
+        72.79844
+      ],
+      [
+        18.81875,
+        72.82812
+      ],
+      [
+        18.85625,
+        72.84531
+      ],
+      [
+        18.87813,
+        72.84375
+      ],
+      [
+        18.89688,
+        72.86563
+      ],
+      [
+        18.90938,
+        72.85469
+      ],
+      [
+        18.925,
+        72.87031
+      ],
+      [
+        18.95156,
+        72.85781
+      ],
+      [
+        18.97188,
+        72.83594
+      ]
+    ],
+    "area_km2": 77.87,
+    "perimeter_km": 72.28,
+    "elongation_ratio": 2.49,
+    "oil_likelihood_confidence": 0.98,
+    "age_class": "moderate"
+  },
+  "origin": {
+    "slick_id": "mumbai_flagship_spill",
+    "center_lat": 19.29146706477066,
+    "center_lon": 72.73601124795387,
+    "radius_km": 4.08,
+    "time_start": "2023-12-31T09:00:00",
+    "time_end": "2023-12-31T11:00:00",
+    "confidence": 0.95
+  },
+  "forecast": {
+    "slick_id": "mumbai_flagship_spill",
+    "points": [
+      {
+        "lat": 18.87568,
+        "lon": 72.82357,
+        "timestamp": "2024-01-03T10:00:00",
+        "uncertainty_km": 0.0
+      },
+      {
+        "lat": 18.88157717184854,
+        "lon": 72.82690849173743,
+        "timestamp": "2024-01-03T10:30:00",
+        "uncertainty_km": 2.71
+      },
+      {
+        "lat": 18.88069062688316,
+        "lon": 72.83358880216122,
+        "timestamp": "2024-01-03T11:00:00",
+        "uncertainty_km": 2.66
+      },
+      {
+        "lat": 18.8778753679647,
+        "lon": 72.83861382755738,
+        "timestamp": "2024-01-03T11:30:00",
+        "uncertainty_km": 2.71
+      },
+      {
+        "lat": 18.874888780752805,
+        "lon": 72.84352532639963,
+        "timestamp": "2024-01-03T12:00:00",
+        "uncertainty_km": 2.78
+      },
+      {
+        "lat": 18.86934438597768,
+        "lon": 72.84553269294484,
+        "timestamp": "2024-01-03T12:30:00",
+        "uncertainty_km": 2.85
+      },
+      {
+        "lat": 18.86379999120255,
+        "lon": 72.84753999401562,
+        "timestamp": "2024-01-03T13:00:00",
+        "uncertainty_km": 2.91
+      },
+      {
+        "lat": 18.856697725328853,
+        "lon": 72.84763687424231,
+        "timestamp": "2024-01-03T13:30:00",
+        "uncertainty_km": 2.95
+      },
+      {
+        "lat": 18.849416267429902,
+        "lon": 72.84772497270859,
+        "timestamp": "2024-01-03T14:00:00",
+        "uncertainty_km": 3.02
+      },
+      {
+        "lat": 18.84201749554147,
+        "lon": 72.84725215957643,
+        "timestamp": "2024-01-03T14:30:00",
+        "uncertainty_km": 3.05
+      },
+      {
+        "lat": 18.83457569419684,
+        "lon": 72.84677315960826,
+        "timestamp": "2024-01-03T15:00:00",
+        "uncertainty_km": 3.05
+      },
+      {
+        "lat": 18.82761621505986,
+        "lon": 72.8461905681522,
+        "timestamp": "2024-01-03T15:30:00",
+        "uncertainty_km": 3.05
+      },
+      {
+        "lat": 18.820656735922874,
+        "lon": 72.84560800082886,
+        "timestamp": "2024-01-03T16:00:00",
+        "uncertainty_km": 3.05
+      },
+      {
+        "lat": 18.817785142997092,
+        "lon": 72.84553641779442,
+        "timestamp": "2024-01-03T16:30:00",
+        "uncertainty_km": 2.99
+      },
+      {
+        "lat": 18.814968121549665,
+        "lon": 72.84349867506248,
+        "timestamp": "2024-01-03T17:00:00",
+        "uncertainty_km": 2.91
+      },
+      {
+        "lat": 18.818300394530056,
+        "lon": 72.84265791969995,
+        "timestamp": "2024-01-03T17:30:00",
+        "uncertainty_km": 2.67
+      },
+      {
+        "lat": 18.813240187230278,
+        "lon": 72.84201698079602,
+        "timestamp": "2024-01-03T18:00:00",
+        "uncertainty_km": 2.67
+      },
+      {
+        "lat": 18.80940164392607,
+        "lon": 72.8429411661924,
+        "timestamp": "2024-01-03T18:30:00",
+        "uncertainty_km": 2.67
+      },
+      {
+        "lat": 18.809776989499284,
+        "lon": 72.8487962568327,
+        "timestamp": "2024-01-03T19:00:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.807161605365547,
+        "lon": 72.85102161262645,
+        "timestamp": "2024-01-03T19:30:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.804546221231806,
+        "lon": 72.85324693382276,
+        "timestamp": "2024-01-03T20:00:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.802455934631507,
+        "lon": 72.85594221792277,
+        "timestamp": "2024-01-03T20:30:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.800365648031203,
+        "lon": 72.85863746854186,
+        "timestamp": "2024-01-03T21:00:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.79837742068864,
+        "lon": 72.8617812708388,
+        "timestamp": "2024-01-03T21:30:00",
+        "uncertainty_km": 1.42
+      },
+      {
+        "lat": 18.796389193346087,
+        "lon": 72.86492503599887,
+        "timestamp": "2024-01-03T22:00:00",
+        "uncertainty_km": 1.42
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "mmsi": "419001234",
+      "vessel_name": "MT Ocean Pioneer",
+      "vessel_type": "Crude Oil Tanker",
+      "proximity_score": 0.886,
+      "trajectory_score": 0.75,
+      "anomaly_score": 0.95,
+      "total_score": 0.843,
+      "rank": 1,
+      "anomaly_flags": [
+        "AIS transponder silence: 4.0h gap detected",
+        "Sudden deceleration near origin (14.2 kts -> 3.2 kts, potential discharge)"
+      ]
+    },
+    {
+      "mmsi": "419003456",
+      "vessel_name": "MV Arabian Carrier",
+      "vessel_type": "Bulk Carrier",
+      "proximity_score": 0.876,
+      "trajectory_score": 0.75,
+      "anomaly_score": 0.0,
+      "total_score": 0.457,
+      "rank": 2,
+      "anomaly_flags": []
+    },
+    {
+      "mmsi": "419007788",
+      "vessel_name": "OSV Malabar",
+      "vessel_type": "Offshore Supply Vessel",
+      "proximity_score": 0.335,
+      "trajectory_score": 0.15,
+      "anomaly_score": 0.0,
+      "total_score": 0.221,
+      "rank": 3,
+      "anomaly_flags": []
+    },
+    {
+      "mmsi": "419005678",
+      "vessel_name": "MV Bharat Star",
+      "vessel_type": "Container Ship",
+      "proximity_score": 0.059,
+      "trajectory_score": 0.15,
+      "anomaly_score": 0.0,
+      "total_score": 0.076,
+      "rank": 4,
+      "anomaly_flags": []
+    },
+    {
+      "mmsi": "419008912",
+      "vessel_name": "Sagar Kanya",
+      "vessel_type": "Fishing Trawler",
+      "proximity_score": 0.0,
+      "trajectory_score": 0.15,
+      "anomaly_score": 0.0,
+      "total_score": 0.055,
+      "rank": 5,
+      "anomaly_flags": []
+    }
+  ],
+  "candidate_tracks": [
+    {
+      "mmsi": "419001234",
+      "vessel_name": "MT Ocean Pioneer",
+      "vessel_type": "Crude Oil Tanker",
+      "positions": [
+        {
+          "lat": 18.94147,
+          "lon": 72.43601,
+          "timestamp": "2023-12-31T04:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.0051,
+          "lon": 72.49056,
+          "timestamp": "2023-12-31T05:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.06874,
+          "lon": 72.5451,
+          "timestamp": "2023-12-31T06:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.13238,
+          "lon": 72.59965,
+          "timestamp": "2023-12-31T07:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.19601,
+          "lon": 72.65419,
+          "timestamp": "2023-12-31T08:00:00",
+          "speed_over_ground": 3.2,
+          "course_over_ground": 42.0
+        },
+        {
+          "lat": 19.25965,
+          "lon": 72.70874,
+          "timestamp": "2023-12-31T09:00:00",
+          "speed_over_ground": 3.2,
+          "course_over_ground": 42.0
+        },
+        {
+          "lat": 19.51419,
+          "lon": 72.92692,
+          "timestamp": "2023-12-31T13:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.57783,
+          "lon": 72.98147,
+          "timestamp": "2023-12-31T14:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        },
+        {
+          "lat": 19.64147,
+          "lon": 73.03601,
+          "timestamp": "2023-12-31T15:00:00",
+          "speed_over_ground": 14.2,
+          "course_over_ground": 45.0
+        }
+      ]
+    },
+    {
+      "mmsi": "419005678",
+      "vessel_name": "MV Bharat Star",
+      "vessel_type": "Container Ship",
+      "positions": [
+        {
+          "lat": 18.89147,
+          "lon": 72.35601,
+          "timestamp": "2023-12-31T05:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 18.98591,
+          "lon": 72.36157,
+          "timestamp": "2023-12-31T06:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.08036,
+          "lon": 72.36712,
+          "timestamp": "2023-12-31T07:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.1748,
+          "lon": 72.37268,
+          "timestamp": "2023-12-31T08:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.26924,
+          "lon": 72.37823,
+          "timestamp": "2023-12-31T09:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.36369,
+          "lon": 72.38379,
+          "timestamp": "2023-12-31T10:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.45813,
+          "lon": 72.38934,
+          "timestamp": "2023-12-31T11:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.55258,
+          "lon": 72.3949,
+          "timestamp": "2023-12-31T12:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.64702,
+          "lon": 72.40046,
+          "timestamp": "2023-12-31T13:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        },
+        {
+          "lat": 19.74147,
+          "lon": 72.40601,
+          "timestamp": "2023-12-31T14:00:00",
+          "speed_over_ground": 18.5,
+          "course_over_ground": 355.0
+        }
+      ]
+    },
+    {
+      "mmsi": "419008912",
+      "vessel_name": "Sagar Kanya",
+      "vessel_type": "Fishing Trawler",
+      "positions": [
+        {
+          "lat": 19.34511,
+          "lon": 73.17709,
+          "timestamp": "2023-12-31T06:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 79.3295541981401
+        },
+        {
+          "lat": 19.3388,
+          "lon": 73.17061,
+          "timestamp": "2023-12-31T07:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 292.3540223960785
+        },
+        {
+          "lat": 19.34727,
+          "lon": 73.16614,
+          "timestamp": "2023-12-31T08:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 295.11164217348073
+        },
+        {
+          "lat": 19.35507,
+          "lon": 73.1664,
+          "timestamp": "2023-12-31T09:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 88.18725638476673
+        },
+        {
+          "lat": 19.36155,
+          "lon": 73.16067,
+          "timestamp": "2023-12-31T10:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 266.92813880449546
+        },
+        {
+          "lat": 19.36415,
+          "lon": 73.16922,
+          "timestamp": "2023-12-31T11:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 83.48694789831077
+        },
+        {
+          "lat": 19.37013,
+          "lon": 73.16958,
+          "timestamp": "2023-12-31T12:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 83.36002493414429
+        },
+        {
+          "lat": 19.36345,
+          "lon": 73.16954,
+          "timestamp": "2023-12-31T13:00:00",
+          "speed_over_ground": 2.8,
+          "course_over_ground": 209.78087062151516
+        }
+      ]
+    },
+    {
+      "mmsi": "419003456",
+      "vessel_name": "MV Arabian Carrier",
+      "vessel_type": "Bulk Carrier",
+      "positions": [
+        {
+          "lat": 19.04147,
+          "lon": 72.53601,
+          "timestamp": "2023-12-30T15:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.1129,
+          "lon": 72.59315,
+          "timestamp": "2023-12-30T16:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.18432,
+          "lon": 72.6503,
+          "timestamp": "2023-12-30T17:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.25575,
+          "lon": 72.70744,
+          "timestamp": "2023-12-30T18:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.32718,
+          "lon": 72.76458,
+          "timestamp": "2023-12-30T19:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.39861,
+          "lon": 72.82173,
+          "timestamp": "2023-12-30T20:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.47004,
+          "lon": 72.87887,
+          "timestamp": "2023-12-30T21:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        },
+        {
+          "lat": 19.54147,
+          "lon": 72.93601,
+          "timestamp": "2023-12-30T22:00:00",
+          "speed_over_ground": 12.5,
+          "course_over_ground": 40.0
+        }
+      ]
+    },
+    {
+      "mmsi": "419007788",
+      "vessel_name": "OSV Malabar",
+      "vessel_type": "Offshore Supply Vessel",
+      "positions": [
+        {
+          "lat": 19.51147,
+          "lon": 72.83601,
+          "timestamp": "2023-12-31T05:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.51647,
+          "lon": 72.83301,
+          "timestamp": "2023-12-31T06:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.52147,
+          "lon": 72.83001,
+          "timestamp": "2023-12-31T07:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.52647,
+          "lon": 72.82701,
+          "timestamp": "2023-12-31T08:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.53147,
+          "lon": 72.82401,
+          "timestamp": "2023-12-31T09:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.53647,
+          "lon": 72.82101,
+          "timestamp": "2023-12-31T10:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.54147,
+          "lon": 72.81801,
+          "timestamp": "2023-12-31T11:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        },
+        {
+          "lat": 19.54647,
+          "lon": 72.81501,
+          "timestamp": "2023-12-31T12:00:00",
+          "speed_over_ground": 8.5,
+          "course_over_ground": 290.0
+        }
+      ]
+    }
+  ],
+  "execution_time_seconds": 4.916,
+  "metadata": {
+    "sar_method_used": "unet",
+    "sar_confidence": 0.98,
+    "wind_source": "slick1_wind.nc",
+    "currents_source": "slick1_currents_hourly.nc",
+    "metocean_source": "real_netcdf",
+    "ais_mode": "synthetic",
+    "num_candidates": 5
+  }
+}
