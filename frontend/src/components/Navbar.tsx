@@ -59,11 +59,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="bg-transparent text-slate-200 font-medium outline-none cursor-pointer pr-1"
             disabled={isLoading}
           >
-            {Object.entries(regions).map(([key, r]) => (
-              <option key={key} value={key} className="bg-slate-800 text-slate-200">
-                {r.name}
-              </option>
-            ))}
+            {Object.entries(regions).map(([key, r]) => {
+              const displayName = r.name.replace(/^sector[:\s]*/i, '');
+              return (
+                <option key={key} value={key} className="bg-slate-800 text-slate-200">
+                  {displayName}
+                </option>
+              );
+            })}
           </select>
         </div>
 

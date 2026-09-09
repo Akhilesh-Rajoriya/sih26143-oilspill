@@ -6,11 +6,14 @@ for the Web GIS Tactical Dashboard.
 import os
 import glob
 import json
+import re
 import shutil
 import tempfile
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
+import rasterio
+from rasterio.warp import transform_bounds
 import torch
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +27,12 @@ from app.config import (
     REGIONS,
     DEFAULT_ROI,
     MODEL_WEIGHTS_PATH,
+    RegionOfInterest,
 )
 from app.pipeline import run_pipeline
+
+# In-memory storage for custom uploaded scenarios so user can switch between them in navbar
+CUSTOM_SCENARIOS: Dict[str, ScenarioResult] = {}
 
 app = FastAPI(
     title="SIH26143: Satellite Oil Spill Detection & AIS Attribution API",
@@ -140,8 +147,11 @@ def run_default_scenario() -> ScenarioResult:
 def run_preset_scenario(region_key: str) -> ScenarioResult:
     """
     Executes or loads pre-computed verified scenario for selected maritime regions:
-    'mumbai_coast', 'gujarat_kutch', 'ennore_port', or 'global_corridor'.
+    'mumbai_coast', 'gujarat_kutch', 'ennore_port', 'global_corridor', or custom uploaded sectors.
     """
+    if region_key in CUSTOM_SCENARIOS:
+        return CUSTOM_SCENARIOS[region_key]
+
     preset_files = {
         "mumbai_coast": "default_scenario.json",
         "gujarat_kutch": "benchmark_gujarat.json",
@@ -196,21 +206,7 @@ async def analyze_uploaded_image(
     """
     tmp_path = None
     try:
-        # 1. Resolve bounding box
-        if south is not None and north is not None and west is not None and east is not None:
-            bbox = (south, north, west, east)
-        elif region_preset in REGIONS:
-            bbox = REGIONS[region_preset].bbox
-        else:
-            bbox = DEFAULT_ROI.bbox
-
-        # 2. Resolve detection timestamp
-        if detection_time:
-            dt = datetime.fromisoformat(detection_time)
-        else:
-            dt = datetime.utcnow()
-
-        # 3. Stream uploaded file directly to disk in 64KB chunks (RAM footprint < 100KB)
+        # 1. Stream uploaded file directly to disk in 64KB chunks (RAM footprint < 100KB)
         file_ext = os.path.splitext(file.filename)[1] or ".tif"
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
             tmp_path = tmp_file.name
@@ -219,7 +215,40 @@ async def analyze_uploaded_image(
         if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
+        # 2. Check if uploaded file on disk is a GeoTIFF with true embedded CRS coordinates
+        file_geo_bbox = None
+        try:
+            with rasterio.open(tmp_path) as src:
+                if src.crs and src.bounds:
+                    b = transform_bounds(src.crs, "EPSG:4326", *src.bounds)
+                    if -90 <= b[1] <= 90 and -90 <= b[3] <= 90 and -180 <= b[0] <= 180 and -180 <= b[2] <= 180 and b[1] < b[3] and b[0] < b[2]:
+                        file_geo_bbox = (float(b[1]), float(b[3]), float(b[0]), float(b[2]))
+                        print(f"[FastAPI] Extracted embedded GeoTIFF coordinates: {file_geo_bbox}")
+        except Exception:
+            pass
+
+        # Priority:
+        # 1. True GeoTIFF bounds directly from uploaded file (if present)
+        # 2. Coordinates explicitly sent from client
+        # 3. Selected region preset
+        # 4. Default ROI
+        if file_geo_bbox is not None:
+            bbox = file_geo_bbox
+        elif south is not None and north is not None and west is not None and east is not None:
+            bbox = (south, north, west, east)
+        elif region_preset in REGIONS:
+            bbox = REGIONS[region_preset].bbox
+        else:
+            bbox = DEFAULT_ROI.bbox
+
+        # 3. Resolve detection timestamp
+        if detection_time:
+            dt = datetime.fromisoformat(detection_time)
+        else:
+            dt = datetime.utcnow()
+
         clean_basename = os.path.splitext(file.filename)[0].replace("_decimated", "")
+        clean_basename = re.sub(r"^(sector[:\s]*|scene[:\s]*)+", "", clean_basename, flags=re.IGNORECASE).strip()
         slick_id = f"custom_{clean_basename}_{int(datetime.utcnow().timestamp())}"
 
         # 4. Run pipeline directly using disk path with decimation-on-read
@@ -233,10 +262,28 @@ async def analyze_uploaded_image(
             ais_mode="synthetic",
         )
 
-        # Attach custom sector metadata for frontend registration
-        resolved_sector_name = sector_name or f"Sector: {clean_basename.replace('_', ' ').title()}"
+        # 5. Clean and register custom sector metadata
+        if sector_name:
+            clean_sector = re.sub(r"^(sector[:\s]*|scene[:\s]*)+", "", sector_name.strip(), flags=re.IGNORECASE).strip()
+            resolved_sector_name = f"Scene {clean_sector}" if clean_sector else f"Scene {clean_basename.upper()}"
+        else:
+            resolved_sector_name = f"Scene {clean_basename.upper()}"
+
+        sec_key = f"custom_{clean_basename}_{int(datetime.utcnow().timestamp() * 1000)}"
+
+        # Register in REGIONS so dropdown can recognize it
+        REGIONS[sec_key] = RegionOfInterest(
+            name=resolved_sector_name,
+            lat_min=float(bbox[0]),
+            lat_max=float(bbox[1]),
+            lon_min=float(bbox[2]),
+            lon_max=float(bbox[3]),
+        )
+        # Cache scenario in memory so user can switch back to it at any time
+        CUSTOM_SCENARIOS[sec_key] = result
+
         result.metadata["custom_sector"] = {
-            "key": f"custom_{int(datetime.utcnow().timestamp())}",
+            "key": sec_key,
             "name": resolved_sector_name,
             "bbox": {
                 "south": float(bbox[0]),

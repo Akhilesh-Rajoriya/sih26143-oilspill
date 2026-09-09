@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, FileImage, Loader2, AlertCircle, Compass, CheckCircle2, Waves, Ship, Globe, Sparkles, MapPin } from 'lucide-react';
 import { fromBlob } from 'geotiff';
 import type { RegionPreset } from '../types';
@@ -158,6 +158,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clear modal state every time it is opened to guarantee zero leakage between uploads
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedFile(null);
+      setDetectedBbox(null);
+      setCustomSectorName('');
+      setErrorMsg(null);
+      setStatusMsg(null);
+      setCreateNewSector(true);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -202,10 +218,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const onFileChosen = async (file: File) => {
     setSelectedFile(file);
+    setDetectedBbox(null); // Clear previous file's coordinates immediately!
     setErrorMsg(null);
     setStatusMsg(null);
-    const base = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-    setCustomSectorName(`Sector: ${base.toUpperCase()}`);
+    const base = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+    const cleanName = base.toUpperCase();
+    setCustomSectorName(cleanName.startsWith('SCENE') ? cleanName : `Scene ${cleanName}`);
 
     if (file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff')) {
       try {
@@ -236,6 +254,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     if (e.target.files && e.target.files[0]) {
       onFileChosen(e.target.files[0]);
     }
+    e.target.value = ''; // Ensure selecting same or new file fires onChange reliably
   };
 
   const handleRunPreset = async (key: string) => {
@@ -264,14 +283,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       );
 
       setStatusMsg('Executing SAR inference & vessel attribution...');
-      const targetBbox = detectedBbox || embeddedBbox || (regions[selectedRegion]?.bbox ? {
+
+      // Priority: Freshly extracted embeddedBbox from this specific file > detectedBbox > selected region
+      const targetBbox = embeddedBbox || detectedBbox || (regions[selectedRegion]?.bbox ? {
         south: regions[selectedRegion].bbox.south,
         north: regions[selectedRegion].bbox.north,
         west: regions[selectedRegion].bbox.west,
         east: regions[selectedRegion].bbox.east,
       } : undefined);
 
-      const sectorName = createNewSector ? (customSectorName.trim() || `Sector: ${selectedFile.name}`) : undefined;
+      const sectorName = createNewSector ? (customSectorName.trim() || `Scene ${selectedFile.name.replace(/\.[^/.]+$/, '').toUpperCase()}`) : undefined;
 
       await onUpload(optimizedFile, selectedRegion, targetBbox, sectorName);
       onClose();
@@ -420,9 +441,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       ? 'border-emerald-500/60 bg-emerald-500/10'
                       : 'border-slate-700 hover:border-slate-600 bg-slate-800/40'
                   }`}
-                  onClick={() => document.getElementById('sar-file-input')?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <input
+                    ref={fileInputRef}
                     id="sar-file-input"
                     type="file"
                     accept=".tif,.tiff,.png,.jpg,.jpeg"
@@ -435,9 +457,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       <div className="text-emerald-300 font-semibold text-xs">
                         {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                       </div>
-                      <div className="text-[10px] text-slate-400 flex items-center justify-center space-x-1">
+                      <div className="text-[10px] text-slate-400 flex items-center justify-center space-x-2">
                         <Sparkles className="w-3 h-3 text-emerald-400" />
-                        <span>Automatic in-browser optimization active</span>
+                        <span>Ready for high-speed analysis</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                            setDetectedBbox(null);
+                            setCustomSectorName('');
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="ml-2 text-red-400 hover:text-red-300 underline text-[10px]"
+                        >
+                          Change file
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -490,7 +525,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                         type="text"
                         value={customSectorName}
                         onChange={(e) => setCustomSectorName(e.target.value)}
-                        placeholder="e.g. Sector: CUSTOM SCENE 00001"
+                        placeholder="e.g. Scene 00001 or North Sea Sector"
                         className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-xs outline-none focus:border-blue-500 font-medium"
                       />
                     </div>

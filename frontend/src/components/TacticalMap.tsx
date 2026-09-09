@@ -11,11 +11,11 @@ interface TacticalMapProps {
 }
 
 // Helper to re-center map when scenario updates
-const MapAutoRecenter: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) => {
+const MapAutoRecenter: React.FC<{ lat: number; lon: number; scenarioId?: string }> = ({ lat, lon, scenarioId }) => {
   const map = useMap();
   useEffect(() => {
     map.flyTo([lat, lon], 10, { duration: 1.5 });
-  }, [lat, lon, map]);
+  }, [lat, lon, scenarioId, map]);
   return null;
 };
 
@@ -80,7 +80,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           maxZoom={16}
         />
 
-        {scenario && <MapAutoRecenter lat={centerLat} lon={centerLon} />}
+        {scenario && <MapAutoRecenter lat={centerLat} lon={centerLon} scenarioId={scenario.scenario_id} />}
 
         {scenario && (
           <>
