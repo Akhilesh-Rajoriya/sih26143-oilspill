@@ -1,9 +1,55 @@
+# Python Environment & Bytecode
 venv/
+.venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Metocean Data (Ignore raw NetCDF cache, except pre-packaged benchmark data)
 *.nc
 !data/*.nc
+
+# Security & Secrets (NEVER COMMIT CREDENTIALS OR API KEYS)
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.cert
+*.crt
+*.pfx
+*.p12
+*.token
+*.secret
+secrets/
+credentials.json
+serviceAccountKey.json
+.cdsapirc
 .copernicusmarine/
+.netrc
+.aws/
+.gcp/
+
+# Testing & Logs
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node & Frontend
 frontend/node_modules/
 frontend/dist/node_modules/
+.npm
+.eslintcache
+
+# IDE & OS
 .DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
