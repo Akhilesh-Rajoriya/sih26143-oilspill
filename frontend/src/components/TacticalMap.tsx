@@ -8,12 +8,73 @@ interface TacticalMapProps {
   timeOffsetHours: number;
   selectedMmsi: string | null;
   onSelectVessel: (mmsi: string) => void;
+  regionName?: string;
 }
 
-// Helper to re-center map when scenario updates
-const MapAutoRecenter: React.FC<{ lat: number; lon: number; scenarioId?: string }> = ({ lat, lon, scenarioId }) => {
+// Automatically resolve geographical marine basin from GPS coordinates or scenario metadata
+function getMaritimeZoneName(lat: number, lon: number, customName?: string): string {
+  if (customName && !customName.toLowerCase().startsWith('scene') && !customName.toLowerCase().startsWith('sector') && !customName.toLowerCase().startsWith('custom')) {
+    return customName;
+  }
+  // Geographical resolution
+  if (lat >= 50 && lat <= 65 && lon >= -5 && lon <= 15) {
+    return 'North Sea Maritime Zone';
+  }
+  if (lat >= 23 && lat <= 27 && lon >= 55 && lon <= 61) {
+    return 'Strait of Hormuz / Gulf of Oman';
+  }
+  if (lat >= 21 && lat <= 24 && lon >= 68 && lon <= 71) {
+    return 'Gulf of Kutch Shipping Channel';
+  }
+  if (lat >= 17 && lat <= 21 && lon >= 71 && lon <= 74) {
+    return 'Mumbai Offshore High Basin';
+  }
+  if (lat >= 12 && lat <= 15 && lon >= 79 && lon <= 82) {
+    return 'Ennore / Chennai Coastal Anchorage';
+  }
+  if (lat >= 5 && lat <= 25 && lon >= 65 && lon <= 77) {
+    return 'Arabian Sea Corridor';
+  }
+  if (lat >= 5 && lat <= 25 && lon >= 78 && lon <= 95) {
+    return 'Bay of Bengal Corridor';
+  }
+  if (customName) {
+    return customName;
+  }
+  return `Maritime Zone (${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E)`;
+}
+
+// Helper to re-center and frame map when scenario updates
+const MapAutoRecenter: React.FC<{
+  lat: number;
+  lon: number;
+  scenarioId?: string;
+  polygon?: [number, number][];
+}> = ({ lat, lon, scenarioId, polygon }) => {
   const map = useMap();
   useEffect(() => {
+    if (polygon && polygon.length > 2) {
+      try {
+        const lats = polygon.map((p) => p[0]);
+        const lons = polygon.map((p) => p[1]);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLon = Math.min(...lons);
+        const maxLon = Math.max(...lons);
+        const dLat = Math.max(maxLat - minLat, 0.05);
+        const dLon = Math.max(maxLon - minLon, 0.05);
+        map.flyToBounds(
+          [
+            [minLat - dLat * 0.8, minLon - dLon * 0.8],
+            [maxLat + dLat * 0.8, maxLon + dLon * 0.8],
+          ],
+          { duration: 1.5, maxZoom: 11 }
+        );
+        return;
+      } catch (e) {
+        // Fallback
+      }
+    }
     map.flyTo([lat, lon], 10, { duration: 1.5 });
   }, [lat, lon, scenarioId, map]);
   return null;
@@ -24,6 +85,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   timeOffsetHours,
   selectedMmsi,
   onSelectVessel,
+  regionName,
 }) => {
   const defaultCenter: [number, number] = [18.95, 72.80]; // Mumbai Coastal Waters
 
@@ -80,7 +142,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           maxZoom={16}
         />
 
-        {scenario && <MapAutoRecenter lat={centerLat} lon={centerLon} scenarioId={scenario.scenario_id} />}
+        {scenario && (
+          <MapAutoRecenter
+            lat={centerLat}
+            lon={centerLon}
+            scenarioId={scenario.scenario_id}
+            polygon={scenario.slick.polygon}
+          />
+        )}
 
         {scenario && (
           <>
@@ -90,33 +159,50 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                 positions={scenario.slick.polygon}
                 pathOptions={{
                   color: '#dc2626',
-                  weight: 2,
+                  weight: 3,
                   fillColor: '#ef4444',
-                  fillOpacity: timeOffsetHours === 0 ? 0.55 : 0.25,
+                  fillOpacity: timeOffsetHours === 0 ? 0.65 : 0.35,
                   dashArray: timeOffsetHours === 0 ? undefined : '4, 4',
                 }}
               >
                 <Popup>
-                  <div className="p-1.5 text-xs text-slate-800 space-y-1">
-                    <div className="font-semibold text-red-600 border-b pb-1">
-                      Oil Spill Detection (Sentinel-1 SAR)
+                  <div className="p-2 text-xs text-slate-800 space-y-1.5">
+                    <div className="font-bold text-red-600 border-b pb-1 flex items-center justify-between">
+                      <span>Oil Spill Detection (Sentinel-1 SAR)</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-mono">U-Net</span>
                     </div>
-                    <div>Estimated Area: <b>{scenario.slick.area_km2.toFixed(2)} km²</b></div>
-                    <div>Perimeter: {scenario.slick.perimeter_km.toFixed(2)} km</div>
-                    <div>Detection Confidence: <b>{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</b></div>
-                    <div>Weathering Stage: <span className="capitalize font-medium text-amber-700">{scenario.slick.age_class}</span></div>
+                    <div>Estimated Surface Area: <b>{scenario.slick.area_km2.toFixed(2)} km²</b></div>
+                    <div>Perimeter: <b>{scenario.slick.perimeter_km.toFixed(2)} km</b></div>
+                    <div>SAR Likelihood Confidence: <b>{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</b></div>
+                    <div>Weathering Stage: <span className="capitalize font-semibold text-amber-800">{scenario.slick.age_class}</span></div>
+                    <div className="text-[11px] font-mono text-slate-600 pt-1 border-t">
+                      Centroid: {scenario.slick.centroid_lat.toFixed(4)}°N, {scenario.slick.centroid_lon.toFixed(4)}°E
+                    </div>
                   </div>
                 </Popup>
               </Polygon>
             )}
 
-            {/* Slick Centroid Marker */}
+            {/* Slick Centroid Pulsing Beacon Marker */}
             {showSlick && (
-              <CircleMarker
-                center={[scenario.slick.centroid_lat, scenario.slick.centroid_lon]}
-                radius={4}
-                pathOptions={{ color: '#dc2626', fillColor: '#fca5a5', fillOpacity: 1, weight: 2 }}
-              />
+              <>
+                <CircleMarker
+                  center={[scenario.slick.centroid_lat, scenario.slick.centroid_lon]}
+                  radius={7}
+                  pathOptions={{ color: '#ffffff', fillColor: '#ef4444', fillOpacity: 1, weight: 2 }}
+                >
+                  <Popup>
+                    <div className="p-1 text-xs text-slate-800 font-semibold">
+                      Spill Core Centroid: {scenario.slick.centroid_lat.toFixed(4)}°N, {scenario.slick.centroid_lon.toFixed(4)}°E
+                    </div>
+                  </Popup>
+                </CircleMarker>
+                <CircleMarker
+                  center={[scenario.slick.centroid_lat, scenario.slick.centroid_lon]}
+                  radius={16}
+                  pathOptions={{ color: '#ef4444', fillColor: 'transparent', fillOpacity: 0, weight: 1.5, dashArray: '4, 4' }}
+                />
+              </>
             )}
 
             {/* 2. Hindcast Spill Origin Uncertainty Window */}
@@ -312,12 +398,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         )}
       </div>
 
-      {/* Dynamic Coordinates Indicator (Bottom-Left) */}
+      {/* Dynamic Coordinates & Geographical Zone Indicator (Bottom-Left) */}
       <div className="absolute bottom-4 left-4 z-[1000] bg-slate-900/90 backdrop-blur border border-slate-700/80 rounded-lg px-3 py-1.5 shadow-md flex items-center space-x-2 text-[11px] text-slate-300">
-        <Crosshair className="w-3.5 h-3.5 text-blue-400" />
-        <span className="font-mono">{centerLat.toFixed(4)}°N, {centerLon.toFixed(4)}°E</span>
+        <Crosshair className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+        <span className="font-mono text-slate-200">{centerLat.toFixed(4)}°N, {centerLon.toFixed(4)}°E</span>
         <span className="text-slate-500">•</span>
-        <span className="text-slate-400 font-medium">Arabian Sea Sector</span>
+        <span className="text-blue-300 font-medium">{getMaritimeZoneName(centerLat, centerLon, regionName)}</span>
       </div>
     </div>
   );

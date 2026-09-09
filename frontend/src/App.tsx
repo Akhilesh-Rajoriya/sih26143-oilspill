@@ -144,6 +144,7 @@ export const App: React.FC = () => {
             timeOffsetHours={timeOffsetHours}
             selectedMmsi={selectedMmsi}
             onSelectVessel={setSelectedMmsi}
+            regionName={regions[selectedRegion]?.name}
           />
 
           {/* Bottom Interactive Temporal Scrubber Slider */}
