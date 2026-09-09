@@ -48,6 +48,7 @@ export const App: React.FC = () => {
     try {
       const res = await runDefaultScenario();
       setScenario(res);
+      setSelectedRegion('mumbai_coast');
       setTimeOffsetHours(0);
       if (res.candidates.length > 0) {
         setSelectedMmsi(res.candidates[0].mmsi);
