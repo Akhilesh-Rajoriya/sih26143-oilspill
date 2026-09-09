@@ -16,7 +16,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from schemas import ScenarioResult
+from schemas import ScenarioResult, SystemHealth
 from app.config import (
     DEFAULT_SAR_TEST_IMAGE,
     DEFAULT_WIND_NC,
@@ -43,21 +43,21 @@ app.add_middleware(
 )
 
 
-@app.get("/api/v1/health")
-def health_check() -> Dict[str, Any]:
+@app.get("/api/v1/health", response_model=SystemHealth)
+def health_check() -> SystemHealth:
     """Returns server status, hardware acceleration, and model weights integrity."""
     cuda_available = torch.cuda.is_available()
     device_name = torch.cuda.get_device_name(0) if cuda_available else "CPU"
     weights_exist = os.path.exists(MODEL_WEIGHTS_PATH)
 
-    return {
-        "status": "healthy",
-        "service": "sih26143-pipeline-api",
-        "cuda_accelerated": cuda_available,
-        "device": device_name,
-        "model_weights_loaded": weights_exist,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
+    return SystemHealth(
+        status="healthy",
+        service="sih26143-pipeline-api",
+        cuda_accelerated=cuda_available,
+        device=device_name,
+        model_weights_loaded=weights_exist,
+        timestamp=datetime.utcnow(),
+    )
 
 
 @app.get("/api/v1/scenarios/presets")
