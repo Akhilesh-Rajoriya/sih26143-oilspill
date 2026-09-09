@@ -102,9 +102,13 @@ _DEFAULT_SCENARIO_CACHE = None
 def run_default_scenario() -> ScenarioResult:
     """
     Executes the flagship Mumbai High offshore scenario.
+    Caches result in-memory so subsequent clicks are instantaneous (< 0.05s).
     Loads pre-computed verified scenario for instant (< 0.01s) zero-RAM execution
     on free cloud tiers, with live simulation fallback.
     """
+    global _DEFAULT_SCENARIO_CACHE
+    if _DEFAULT_SCENARIO_CACHE is not None:
+        return _DEFAULT_SCENARIO_CACHE
     default_json = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "default_scenario.json")
     if os.path.exists(default_json):
         try:
@@ -124,9 +128,50 @@ def run_default_scenario() -> ScenarioResult:
             currents_nc=DEFAULT_CURRENTS_NC,
             ais_mode="synthetic",
         )
+        _DEFAULT_SCENARIO_CACHE = result
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline execution failed: {str(e)}")
+
+
+@app.post("/api/v1/scenarios/run-preset/{region_key}", response_model=ScenarioResult)
+def run_preset_scenario(region_key: str) -> ScenarioResult:
+    """
+    Executes or loads pre-computed verified scenario for selected Indian coastal regions:
+    'mumbai_coast', 'gujarat_kutch', or 'ennore_port'.
+    """
+    preset_files = {
+        "mumbai_coast": "default_scenario.json",
+        "gujarat_kutch": "benchmark_gujarat.json",
+        "ennore_port": "benchmark_ennore.json",
+    }
+    target_filename = preset_files.get(region_key, "default_scenario.json")
+    cached_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", target_filename)
+    if os.path.exists(cached_path):
+        try:
+            with open(cached_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return ScenarioResult(**data)
+        except Exception as e:
+            print(f"[FastAPI] Notice: could not load preset file {target_filename} ({e}), running live...")
+
+    if region_key not in REGIONS:
+        region_key = "mumbai_coast"
+    roi = REGIONS[region_key]
+
+    try:
+        result = run_pipeline(
+            sar_source=DEFAULT_SAR_TEST_IMAGE,
+            bbox=roi.bbox,
+            detection_time=datetime(2024, 1, 3, 10, 0, 0),
+            slick_id=f"{region_key}_spill",
+            wind_nc=DEFAULT_WIND_NC,
+            currents_nc=DEFAULT_CURRENTS_NC,
+            ais_mode="synthetic",
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Preset execution failed: {str(e)}")
 
 
 @app.post("/api/v1/scenarios/analyze-image", response_model=ScenarioResult)

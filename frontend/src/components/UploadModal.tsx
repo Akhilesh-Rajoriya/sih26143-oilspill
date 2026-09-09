@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UploadCloud, FileImage, Loader2, AlertCircle } from 'lucide-react';
+import { X, FileImage, Loader2, AlertCircle, Compass, CheckCircle2, Waves, Ship } from 'lucide-react';
 import type { RegionPreset } from '../types';
 
 interface UploadModalProps {
@@ -8,6 +8,7 @@ interface UploadModalProps {
   regions: Record<string, RegionPreset>;
   sampleImages?: { filename: string; full_path: string }[];
   onUpload: (file: File, regionKey: string) => Promise<void>;
+  onSelectPreset?: (regionKey: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -16,14 +17,43 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   regions,
   onUpload,
+  onSelectPreset,
   isLoading,
 }) => {
+  const [activeTab, setActiveTab] = useState<'benchmarks' | 'upload'>('benchmarks');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('mumbai_coast');
   const [dragOver, setDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const benchmarkCards = [
+    {
+      key: 'mumbai_coast',
+      title: 'Mumbai High Offshore Basin',
+      badge: 'Verified Sentinel-1 Scene',
+      icon: Waves,
+      desc: 'Active 77.87 km² crude slick detected in Arabian Sea shipping lane. Features 4h AIS blackout by suspect tanker.',
+      coordinates: '18.95° N, 72.80° E',
+    },
+    {
+      key: 'gujarat_kutch',
+      title: 'Gulf of Kutch Maritime Approach',
+      badge: 'Tanker Transit Corridor',
+      icon: Ship,
+      desc: 'Heavy crude transit channel with complex shallow-water tidal currents and rapid shoreline trajectory projection.',
+      coordinates: '22.50° N, 69.80° E',
+    },
+    {
+      key: 'ennore_port',
+      title: 'Ennore Coastal Anchorage & Port',
+      badge: 'Port & Anchorage Zone',
+      icon: Compass,
+      desc: 'Commercial harbor approaches simulating acute bunker fuel discharge and sensitive coastal threat assessment.',
+      coordinates: '13.30° N, 80.30° E',
+    },
+  ];
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,138 +71,224 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleRunPreset = async (key: string) => {
+    setErrorMsg(null);
+    try {
+      if (onSelectPreset) {
+        await onSelectPreset(key);
+      }
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.detail || 'Failed to execute preset scenario.');
+    }
+  };
+
+  const handleSubmitUpload = async () => {
     if (!selectedFile) {
-      setErrorMsg('Please select a SAR image file.');
+      setErrorMsg('Please select a satellite image or GeoTIFF file.');
       return;
     }
+    setErrorMsg(null);
     try {
       await onUpload(selectedFile, selectedRegion);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || 'Analysis failed. Check server logs.');
+      setErrorMsg(err.response?.data?.detail || 'Analysis failed. Please ensure file is a valid image (.tif, .png, .jpg).');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 font-mono select-none">
-      <div className="bg-tactical-dark border border-tactical-border rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 select-none">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="p-4 border-b border-tactical-border flex items-center justify-between bg-tactical-darker">
-          <div className="flex items-center space-x-2">
-            <UploadCloud className="w-5 h-5 text-tactical-accent" />
-            <span className="font-bold text-slate-100 text-sm tracking-wide">
-              UPLOAD NEW SAR RADAR SCENE
-            </span>
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div>
+            <h2 className="font-semibold text-white text-base tracking-tight">
+              Satellite SAR Scene Analysis
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Execute U-Net oil spill segmentation, Lagrangian drift, and AIS vessel attribution
+            </p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-all">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Tab Toggle */}
+        <div className="px-6 pt-4 pb-2 border-b border-slate-800 flex space-x-2 bg-slate-900/50">
+          <button
+            onClick={() => setActiveTab('benchmarks')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeTab === 'benchmarks'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            Pre-loaded Benchmark Scenes
+          </button>
+          <button
+            onClick={() => setActiveTab('upload')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeTab === 'upload'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            Upload Custom SAR File
+          </button>
+        </div>
+
         {/* Modal Body */}
-        <div className="p-5 space-y-4 text-xs">
+        <div className="p-6 space-y-4 overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 rounded bg-red-950/60 border border-red-800 text-red-300 flex items-center space-x-2">
+            <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-200 text-xs flex items-center space-x-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Region Selector */}
-          <div>
-            <label className="block text-slate-400 font-bold mb-1.5 text-[11px]">
-              TARGET MARITIME SECTOR
-            </label>
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className="w-full bg-tactical-surface border border-tactical-border rounded-md px-3 py-2 text-slate-200 outline-none focus:border-tactical-accent"
-            >
-              {Object.entries(regions).map(([key, r]) => (
-                <option key={key} value={key}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Dropzone */}
-          <div>
-            <label className="block text-slate-400 font-bold mb-1.5 text-[11px]">
-              SATELLITE RASTER FILE (.tif / .png)
-            </label>
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleFileDrop}
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
-                dragOver
-                  ? 'border-tactical-accent bg-tactical-accent/10'
-                  : selectedFile
-                  ? 'border-tactical-success bg-tactical-success/10'
-                  : 'border-tactical-border hover:border-slate-500 bg-tactical-darker'
-              }`}
-              onClick={() => document.getElementById('sar-file-input')?.click()}
-            >
-              <input
-                id="sar-file-input"
-                type="file"
-                accept=".tif,.tiff,.png,.jpg,.jpeg"
-                onChange={handleFileInput}
-                className="hidden"
-              />
-              <FileImage className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-              {selectedFile ? (
-                <div className="text-tactical-success font-bold truncate">
-                  {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                </div>
-              ) : (
-                <>
-                  <div className="text-slate-300 font-bold">Drag & drop SAR raster here</div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Supports GeoTIFF, Sentinel-1 crops, and PNGs
-                  </div>
-                </>
-              )}
+          {activeTab === 'benchmarks' ? (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-300">
+                Select an operational maritime sector to run an instant analysis:
+              </p>
+              <div className="space-y-2.5">
+                {benchmarkCards.map((b) => {
+                  const Icon = b.icon;
+                  return (
+                    <div
+                      key={b.key}
+                      onClick={() => !isLoading && handleRunPreset(b.key)}
+                      className="p-3.5 rounded-xl border border-slate-800 hover:border-blue-500/60 bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-all flex items-start space-x-3.5 group shadow-sm"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-xs text-white group-hover:text-blue-300 transition-colors">
+                            {b.title}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-medium">
+                            {b.coordinates}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          {b.desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4 text-xs">
+              {/* Region Selector */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-1.5 text-xs">
+                  Operational Maritime Sector
+                </label>
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 outline-none focus:border-blue-500"
+                >
+                  {Object.entries(regions).map(([key, r]) => (
+                    <option key={key} value={key}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Notice on Adaptive Metocean */}
-          <div className="p-2.5 rounded bg-tactical-darker border border-tactical-border/60 text-[10px] text-slate-400">
-            <span className="text-tactical-accent font-bold">INFO: </span>
-            If NetCDF climate grids are not present for the uploaded coordinate, the auto-adaptive physics engine automatically calculates local monsoon drift vectors.
-          </div>
+              {/* Dropzone */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-1.5 text-xs">
+                  Sentinel-1 SAR Raster File (.tif, .png, .jpg)
+                </label>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleFileDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                    dragOver
+                      ? 'border-blue-500 bg-blue-500/10'
+                      : selectedFile
+                      ? 'border-emerald-500/60 bg-emerald-500/10'
+                      : 'border-slate-700 hover:border-slate-600 bg-slate-800/40'
+                  }`}
+                  onClick={() => document.getElementById('sar-file-input')?.click()}
+                >
+                  <input
+                    id="sar-file-input"
+                    type="file"
+                    accept=".tif,.tiff,.png,.jpg,.jpeg"
+                    onChange={handleFileInput}
+                    className="hidden"
+                  />
+                  <FileImage className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                  {selectedFile ? (
+                    <div className="text-emerald-300 font-medium text-xs">
+                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-slate-200 font-medium">Click to browse or drop file here</div>
+                      <div className="text-[11px] text-slate-400 mt-1">
+                        Accepts GeoTIFF, Sentinel-1 VV/VH radar scenes, PNG, and JPG rasters
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Adaptive Drift Note */}
+              <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-300 flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  <b>Automatic Cloud Optimization:</b> Large satellite scenes are dynamically preprocessed in memory to maintain sub-second response times without exceeding memory limits.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-tactical-border bg-tactical-darker flex items-center justify-end space-x-2">
+        <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end space-x-2.5">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-3.5 py-2 rounded-md bg-tactical-surface border border-tactical-border text-slate-300 hover:text-white text-xs"
+            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-all"
           >
-            CANCEL
+            Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || !selectedFile}
-            className="flex items-center space-x-2 px-4 py-2 rounded-md bg-tactical-accent text-tactical-darkest font-bold text-xs hover:bg-cyan-300 disabled:opacity-50 transition-all"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>ANALYZING...</span>
-              </>
-            ) : (
-              <span>RUN FULL ANALYSIS</span>
-            )}
-          </button>
+          {activeTab === 'upload' && (
+            <button
+              onClick={handleSubmitUpload}
+              disabled={isLoading || !selectedFile}
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs disabled:opacity-50 transition-all shadow-sm"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing Scene...</span>
+                </>
+              ) : (
+                <span>Run Analysis</span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 };
+

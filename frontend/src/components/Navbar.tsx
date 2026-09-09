@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Play, Upload, Cpu, Radio, MapPin, FileText, Loader2 } from 'lucide-react';
+import { Compass, Play, UploadCloud, Cpu, MapPin, FileDown, Loader2, CheckCircle2 } from 'lucide-react';
 import type { SystemHealth, RegionPreset } from '../types';
 
 interface NavbarProps {
@@ -26,107 +26,111 @@ export const Navbar: React.FC<NavbarProps> = ({
   executionTime,
 }) => {
   return (
-    <header className="h-16 bg-tactical-darker/90 backdrop-blur border-b border-tactical-border px-4 flex items-center justify-between z-30 shrink-0 select-none">
-      {/* Brand & Project Identity */}
-      <div className="flex items-center space-x-3">
-        <div className="p-2 rounded-lg bg-tactical-accent/10 border border-tactical-accent/40 text-tactical-accent shadow-[0_0_12px_rgba(6,182,212,0.3)]">
-          <Shield className="w-5 h-5" />
+    <header className="h-16 bg-slate-900 border-b border-slate-800 px-5 flex items-center justify-between z-30 shrink-0 select-none shadow-sm">
+      {/* Brand & Institutional Identity */}
+      <div className="flex items-center space-x-3.5">
+        <div className="w-10 h-10 rounded-lg bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
+          <Compass className="w-5 h-5" />
         </div>
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-base tracking-wider text-white">SIH-26143</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-cyan-950 border border-tactical-accent/30 text-tactical-accent font-mono">
-              NTRO DEFENSE
+          <div className="flex items-center space-x-2.5">
+            <h1 className="font-semibold text-sm tracking-tight text-white">
+              National Maritime Domain Awareness
+            </h1>
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300">
+              SIH-26143 • NTRO
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-mono tracking-wide">
-            SATELLITE SAR OIL SPILL DETECTION & AIS ATTRIBUTION SYSTEM
+          <p className="text-xs text-slate-400 font-normal">
+            Satellite SAR Oil Spill Surveillance & AIS Attribution System
           </p>
         </div>
       </div>
 
-      {/* Center Controls: Region Preset & Telemetry */}
-      <div className="hidden md:flex items-center space-x-3">
-        {/* Region Selector */}
-        <div className="flex items-center space-x-2 bg-tactical-dark border border-tactical-border px-2.5 py-1.5 rounded-md text-xs font-mono">
-          <MapPin className="w-3.5 h-3.5 text-tactical-accent" />
-          <span className="text-slate-400">SECTOR:</span>
+      {/* Center Controls: Operational Sector & System Telemetry */}
+      <div className="hidden lg:flex items-center space-x-3 text-xs">
+        {/* Sector Selector */}
+        <div className="flex items-center space-x-2 bg-slate-800/80 border border-slate-700/70 px-3 py-1.5 rounded-lg shadow-sm">
+          <MapPin className="w-3.5 h-3.5 text-blue-400" />
+          <span className="text-slate-400 font-medium">Sector:</span>
           <select
             value={selectedRegion}
             onChange={(e) => onSelectRegion(e.target.value)}
-            className="bg-transparent text-slate-200 outline-none cursor-pointer pr-2 font-mono"
+            className="bg-transparent text-slate-200 font-medium outline-none cursor-pointer pr-1"
             disabled={isLoading}
           >
             {Object.entries(regions).map(([key, r]) => (
-              <option key={key} value={key} className="bg-tactical-dark text-slate-200">
+              <option key={key} value={key} className="bg-slate-800 text-slate-200">
                 {r.name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Hardware Telemetry Badge */}
-        <div className="flex items-center space-x-2 bg-tactical-dark border border-tactical-border px-2.5 py-1.5 rounded-md text-xs font-mono">
-          <Cpu className="w-3.5 h-3.5 text-tactical-accent" />
-          <span className="text-slate-400">ENGINE:</span>
+        {/* Engine Status */}
+        <div className="flex items-center space-x-2 bg-slate-800/80 border border-slate-700/70 px-3 py-1.5 rounded-lg shadow-sm">
+          <Cpu className="w-3.5 h-3.5 text-blue-400" />
+          <span className="text-slate-400 font-medium">System:</span>
           {health ? (
             <div className="flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-tactical-success animate-pulse" />
-              <span className="text-tactical-success font-medium">
-                {health.cuda_accelerated ? 'CUDA RTX 3050' : 'CPU MODE'}
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-300 font-medium">
+                {health.cuda_accelerated ? 'CUDA GPU Active' : 'Online (Cloud CPU)'}
               </span>
             </div>
           ) : (
-            <span className="text-slate-500">CONNECTING...</span>
+            <span className="text-slate-500">Connecting...</span>
           )}
         </div>
 
+        {/* Execution Speed Badge */}
         {executionTime !== undefined && (
-          <div className="hidden lg:flex items-center space-x-1.5 bg-tactical-accent/10 border border-tactical-accent/30 px-2.5 py-1.5 rounded-md text-xs font-mono text-tactical-accent">
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>SOLVED IN: {executionTime.toFixed(2)}s</span>
+          <div className="flex items-center space-x-1.5 bg-blue-950/40 border border-blue-800/50 px-3 py-1.5 rounded-lg text-blue-300">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="font-medium">Inference: {executionTime.toFixed(2)}s</span>
           </div>
         )}
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center space-x-2">
-        {/* 1-Click Flagship Scenario */}
+      <div className="flex items-center space-x-2.5">
+        {/* Run Flagship Scenario */}
         <button
           onClick={onRunDefault}
           disabled={isLoading}
-          className="flex items-center space-x-2 px-3.5 py-2 rounded-md bg-tactical-accent text-tactical-darkest font-semibold text-xs tracking-wider transition-all duration-200 hover:bg-cyan-300 hover:shadow-[0_0_16px_rgba(6,182,212,0.5)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>PROCESSING...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Running Simulation...</span>
             </>
           ) : (
             <>
-              <Play className="w-4 h-4 fill-current" />
-              <span>RUN FLAGSHIP SCENARIO</span>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Run Flagship Scenario</span>
             </>
           )}
         </button>
 
-        {/* Upload Custom Image */}
+        {/* Analyze SAR Scene (Upload / Benchmark) */}
         <button
           onClick={onOpenUpload}
           disabled={isLoading}
-          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-tactical-surface border border-tactical-border text-slate-200 hover:text-tactical-accent hover:border-tactical-accent/50 text-xs font-mono transition-all duration-150 active:scale-95 disabled:opacity-50"
+          className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white text-xs font-medium transition-all active:scale-95 disabled:opacity-50 shadow-sm"
         >
-          <Upload className="w-4 h-4" />
-          <span className="hidden sm:inline">ANALYZE NEW SAR</span>
+          <UploadCloud className="w-3.5 h-3.5 text-blue-400" />
+          <span>Analyze SAR Scene</span>
         </button>
 
         {/* Export Report */}
         <button
           onClick={onExportReport}
-          className="p-2 rounded-md bg-tactical-surface border border-tactical-border text-slate-300 hover:text-white hover:border-slate-500 text-xs transition-all duration-150"
-          title="Print Intelligence Dossier"
+          className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-all shadow-sm"
+          title="Print Incident Report Dossier"
         >
-          <FileText className="w-4 h-4" />
+          <FileDown className="w-3.5 h-3.5" />
+          <span className="hidden xl:inline">Export Dossier</span>
         </button>
       </div>
     </header>

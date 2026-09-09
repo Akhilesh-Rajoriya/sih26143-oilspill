@@ -27,6 +27,11 @@ export const runDefaultScenario = async (): Promise<ScenarioResult> => {
   return data;
 };
 
+export const runPresetScenario = async (regionKey: string): Promise<ScenarioResult> => {
+  const { data } = await api.post<ScenarioResult>(`/api/v1/scenarios/run-preset/${regionKey}`);
+  return data;
+};
+
 export const analyzeUploadedImage = async (
   file: File,
   regionPreset: string = 'mumbai_coast',

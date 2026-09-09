@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle, CheckCircle2, Anchor, Radar } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, CheckCircle2, Ship, ShieldAlert, Waves, Download } from 'lucide-react';
 import type { ScenarioResult } from '../types';
 
 interface SuspectTriagePanelProps {
@@ -13,184 +13,258 @@ export const SuspectTriagePanel: React.FC<SuspectTriagePanelProps> = ({
   selectedMmsi,
   onSelectVessel,
 }) => {
+  const [filter, setFilter] = useState<'all' | 'suspects' | 'cleared'>('all');
+
   if (!scenario) {
     return (
-      <aside className="w-96 bg-tactical-darker/95 backdrop-blur border-l border-tactical-border p-5 flex flex-col justify-center items-center text-center font-mono text-xs select-none">
-        <Radar className="w-12 h-12 text-tactical-accent/40 animate-radar-pulse mb-3" />
-        <div className="font-bold text-slate-300 mb-1">AWAITING SURVEILLANCE RUN</div>
-        <p className="text-slate-500 text-[11px] max-w-xs">
-          Click <b>"Run Flagship Scenario"</b> or upload an image to trigger U-Net segmentation, drift hindcast, and AIS attribution.
+      <aside className="w-96 bg-slate-900 border-l border-slate-800 p-6 flex flex-col justify-center items-center text-center text-xs select-none shadow-lg">
+        <div className="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-3.5 shadow-inner">
+          <Ship className="w-7 h-7" />
+        </div>
+        <h3 className="font-semibold text-white text-sm mb-1.5">No Active Surveillance Run</h3>
+        <p className="text-slate-400 text-xs leading-relaxed max-w-xs">
+          Click <b>"Run Flagship Scenario"</b> or upload a SAR scene to perform automated slick segmentation, Lagrangian drift simulation, and AIS vessel attribution.
         </p>
       </aside>
     );
   }
 
-  const primarySuspect = scenario.candidates[0];
+  const filteredCandidates = scenario.candidates.filter((c) => {
+    if (filter === 'suspects') return c.total_score >= 0.5;
+    if (filter === 'cleared') return c.total_score < 0.5;
+    return true;
+  });
+
+  const handleDownloadJSON = () => {
+    const blob = new Blob([JSON.stringify(scenario, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `oil_spill_attribution_${scenario.scenario_id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <aside className="w-96 bg-tactical-darker/95 backdrop-blur border-l border-tactical-border flex flex-col h-full overflow-hidden select-none font-mono text-xs z-10">
+    <aside className="w-[410px] bg-slate-900 border-l border-slate-800 flex flex-col h-full overflow-hidden select-none text-xs z-10 shadow-lg">
       {/* Panel Header */}
-      <div className="p-4 border-b border-tactical-border bg-tactical-dark shrink-0">
+      <div className="p-4 border-b border-slate-800 bg-slate-900/90 shrink-0">
         <div className="flex items-center justify-between">
-          <span className="font-bold text-slate-200 tracking-wider flex items-center space-x-1.5">
-            <Anchor className="w-4 h-4 text-tactical-accent" />
-            <span>VESSEL ATTRIBUTION</span>
-          </span>
-          <span className="px-2 py-0.5 rounded bg-tactical-surface text-slate-400 border border-tactical-border text-[11px]">
-            {scenario.candidates.length} CANDIDATES
-          </span>
+          <div className="flex items-center space-x-2">
+            <ShieldAlert className="w-4 h-4 text-blue-400" />
+            <h2 className="font-semibold text-white text-sm">Vessel Attribution Dossier</h2>
+          </div>
+          <button
+            onClick={handleDownloadJSON}
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] border border-slate-700 transition-all"
+            title="Download Investigation JSON"
+          >
+            <Download className="w-3 h-3" />
+            <span>JSON</span>
+          </button>
         </div>
-        <p className="text-[10px] text-slate-500 mt-1">
-          Ranked by multi-factor Bayesian attribution against the origin window.
+        <p className="text-[11px] text-slate-400 mt-1">
+          Multi-factor Bayesian scoring matching AIS traffic to the hindcast origin window
         </p>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Slick Physical Telemetry Card */}
-        <div className="p-3 rounded-lg bg-tactical-dark border border-tactical-border/70 text-[11px] space-y-2">
-          <div className="flex items-center justify-between text-slate-400 font-bold border-b border-tactical-border pb-1">
-            <span>SAR SLICK GEOMETRY</span>
-            <span className="text-red-400 uppercase">{scenario.slick.age_class}</span>
+      {/* Filter Tabs */}
+      <div className="px-4 py-2 bg-slate-900/60 border-b border-slate-800 flex space-x-1.5 shrink-0">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+            filter === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          All Vessels ({scenario.candidates.length})
+        </button>
+        <button
+          onClick={() => setFilter('suspects')}
+          className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+            filter === 'suspects'
+              ? 'bg-red-600 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          Flagged Suspects ({scenario.candidates.filter((c) => c.total_score >= 0.5).length})
+        </button>
+        <button
+          onClick={() => setFilter('cleared')}
+          className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+            filter === 'cleared'
+              ? 'bg-emerald-600 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          Cleared ({scenario.candidates.filter((c) => c.total_score < 0.5).length})
+        </button>
+      </div>
+
+      {/* Scrollable Investigation Body */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        {/* Incident Summary Card */}
+        <div className="p-3.5 rounded-xl bg-slate-800/50 border border-slate-700/60 text-xs space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-700/60 pb-1.5">
+            <span className="font-semibold text-slate-200 flex items-center space-x-1.5">
+              <Waves className="w-3.5 h-3.5 text-blue-400" />
+              <span>Slick Characteristics</span>
+            </span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-500/10 border border-amber-500/20 text-amber-300 capitalize">
+              {scenario.slick.age_class} Weathering
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-slate-300">
+
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div>
-              <span className="text-slate-500 block text-[10px]">SURFACE AREA</span>
-              <span className="font-bold text-white text-sm">{scenario.slick.area_km2.toFixed(2)} km²</span>
+              <span className="text-slate-400 block text-[10px]">Surface Area</span>
+              <span className="font-semibold text-white text-sm">{scenario.slick.area_km2.toFixed(2)} km²</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">AI CONFIDENCE</span>
-              <span className="font-bold text-tactical-accent text-sm">{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</span>
+              <span className="text-slate-400 block text-[10px]">SAR Confidence</span>
+              <span className="font-semibold text-emerald-400 text-sm">
+                {(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%
+              </span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">PERIMETER</span>
-              <span>{scenario.slick.perimeter_km.toFixed(2)} km</span>
+              <span className="text-slate-400 block text-[10px]">Centroid Coordinates</span>
+              <span className="font-mono text-slate-300 text-[11px]">
+                {scenario.slick.centroid_lat.toFixed(4)}°N, {scenario.slick.centroid_lon.toFixed(4)}°E
+              </span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">ORIGIN RADIUS</span>
-              <span>±{scenario.origin.radius_km.toFixed(2)} km</span>
+              <span className="text-slate-400 block text-[10px]">Origin Search Radius</span>
+              <span className="font-mono text-slate-300 text-[11px]">±{scenario.origin.radius_km.toFixed(2)} km</span>
             </div>
           </div>
         </div>
 
-        {/* Primary Suspect Card (Highlighted) */}
-        {primarySuspect && (
-          <div
-            onClick={() => onSelectVessel(primarySuspect.mmsi)}
-            className={`p-3.5 rounded-lg border transition-all cursor-pointer ${
-              selectedMmsi === primarySuspect.mmsi
-                ? 'bg-red-950/40 border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.3)]'
-                : 'bg-red-950/20 border-red-800/80 hover:border-red-600'
-            }`}
-          >
-            {/* Header Badge */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-1.5 text-red-400 font-bold">
-                <AlertTriangle className="w-4 h-4 animate-bounce" />
-                <span>PRIMARY SUSPECT #1</span>
-              </div>
-              <span className="px-2 py-0.5 rounded bg-red-600 text-white font-bold text-[11px]">
-                {(primarySuspect.total_score * 100).toFixed(1)}% THREAT
-              </span>
-            </div>
+        {/* Candidate Vessel Attribution Cards */}
+        <div className="space-y-3">
+          {filteredCandidates.map((candidate) => {
+            const isSelected = selectedMmsi === candidate.mmsi;
+            const isHighRisk = candidate.total_score >= 0.5;
 
-            {/* Vessel Identity */}
-            <div className="text-sm font-bold text-white mb-0.5">
-              {primarySuspect.vessel_name || 'MT Ocean Pioneer'}
-            </div>
-            <div className="text-[11px] text-slate-400 mb-3 flex items-center space-x-2">
-              <span>MMSI: {primarySuspect.mmsi}</span>
-              <span>•</span>
-              <span className="text-amber-400">{primarySuspect.vessel_type}</span>
-            </div>
-
-            {/* Score Breakdown Bars */}
-            <div className="space-y-1.5 text-[10px] bg-tactical-darkest/60 p-2.5 rounded border border-red-900/50 mb-3">
-              <div>
-                <div className="flex justify-between text-slate-300 mb-0.5">
-                  <span>Proximity Match (35%)</span>
-                  <span className="font-bold">{(primarySuspect.proximity_score * 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full h-1 bg-tactical-surface rounded-full overflow-hidden">
-                  <div className="h-full bg-red-500" style={{ width: `${primarySuspect.proximity_score * 100}%` }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-300 mb-0.5">
-                  <span>Track Intercept (20%)</span>
-                  <span className="font-bold">{(primarySuspect.trajectory_score * 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full h-1 bg-tactical-surface rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500" style={{ width: `${primarySuspect.trajectory_score * 100}%` }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-300 mb-0.5">
-                  <span>Speed Anomaly (10%)</span>
-                  <span className="font-bold">{(primarySuspect.anomaly_score * 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full h-1 bg-tactical-surface rounded-full overflow-hidden">
-                  <div className="h-full bg-red-400" style={{ width: `${primarySuspect.anomaly_score * 100}%` }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Red Anomaly Flags */}
-            {primarySuspect.anomaly_flags.length > 0 && (
-              <div className="space-y-1">
-                <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
-                  TACTICAL ANOMALY FLAGS:
-                </div>
-                {primarySuspect.anomaly_flags.map((flag, idx) => (
-                  <div
-                    key={idx}
-                    className="p-1.5 rounded bg-red-900/30 border border-red-700/50 text-[10px] text-red-300 flex items-start space-x-1.5"
-                  >
-                    <span className="text-red-400 font-bold">•</span>
-                    <span>{flag}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Innocent / Other Candidates List */}
-        <div className="space-y-2">
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            OTHER EVALUATED VESSELS:
-          </div>
-
-          {scenario.candidates.slice(1).map((vessel) => {
-            const isSelected = selectedMmsi === vessel.mmsi;
             return (
               <div
-                key={vessel.mmsi}
-                onClick={() => onSelectVessel(vessel.mmsi)}
-                className={`p-2.5 rounded-md border transition-all cursor-pointer ${
+                key={candidate.mmsi}
+                onClick={() => onSelectVessel(candidate.mmsi)}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-tactical-surface border-tactical-accent'
-                    : 'bg-tactical-dark border-tactical-border hover:border-slate-600'
+                    ? isHighRisk
+                      ? 'bg-red-950/40 border-red-500 shadow-md ring-1 ring-red-500/50'
+                      : 'bg-blue-950/40 border-blue-500 shadow-md ring-1 ring-blue-500/50'
+                    : isHighRisk
+                    ? 'bg-red-950/20 border-red-800/60 hover:border-red-600/80'
+                    : 'bg-slate-800/30 border-slate-700/60 hover:border-slate-600'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="font-bold text-slate-200 truncate max-w-[180px]">
-                    #{vessel.rank} {vessel.vessel_name || vessel.mmsi}
+                {/* Header row: Name and Score Badge */}
+                <div className="flex items-start justify-between mb-1.5">
+                  <div>
+                    <div className="font-semibold text-white text-sm flex items-center space-x-1.5">
+                      <span>{candidate.vessel_name || 'Vessel'}</span>
+                      {isHighRisk && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 text-white font-semibold uppercase">
+                          SUSPECT #{candidate.rank}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 flex items-center space-x-1.5">
+                      <span className="font-mono">MMSI: {candidate.mmsi}</span>
+                      <span>•</span>
+                      <span className="text-slate-300 font-medium">{candidate.vessel_type}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1 text-tactical-success text-[10px]">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>CLEARED</span>
+
+                  <div className="text-right">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        isHighRisk
+                          ? 'bg-red-500/20 border border-red-500/40 text-red-300'
+                          : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+                      }`}
+                    >
+                      {(candidate.total_score * 100).toFixed(1)}% Match
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400">
-                  <span>{vessel.vessel_type}</span>
-                  <span className="font-bold text-slate-300">
-                    Score: {(vessel.total_score * 100).toFixed(1)}%
-                  </span>
+                {/* Score Breakdown Progress Bars */}
+                <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 mt-2.5 mb-2.5">
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Proximity (35%)</span>
+                      <span className="font-medium text-slate-200">{(candidate.proximity_score * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${isHighRisk ? 'bg-red-500' : 'bg-blue-500'}`}
+                        style={{ width: `${candidate.proximity_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Composite Attribution (Weighted)</span>
+                      <span className="font-medium text-slate-200">{(candidate.total_score * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${isHighRisk ? 'bg-red-500' : 'bg-blue-500'}`}
+                        style={{ width: `${candidate.total_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Trajectory Alignment (20%)</span>
+                      <span className="font-medium text-slate-200">{(candidate.trajectory_score * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${isHighRisk ? 'bg-amber-500' : 'bg-blue-500'}`}
+                        style={{ width: `${candidate.trajectory_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Behavioral Anomaly Index (20%)</span>
+                      <span className="font-medium text-slate-200">{(candidate.anomaly_score * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${isHighRisk ? 'bg-red-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${candidate.anomaly_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Behavioral Flags / Forensic Notes */}
+                {candidate.anomaly_flags && candidate.anomaly_flags.length > 0 ? (
+                  <div className="p-2 rounded-lg bg-red-950/40 border border-red-900/60 text-[11px] text-red-200 space-y-1">
+                    <span className="font-semibold text-red-300 block text-[10px] uppercase tracking-wide">
+                      Forensic Behavioral Anomalies:
+                    </span>
+                    {candidate.anomaly_flags.map((flag: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-1.5">
+                        <AlertTriangle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{flag}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-1 text-[10px] text-slate-400">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span>Normal commercial cruising pattern; no anomalies detected.</span>
+                  </div>
+                )}
               </div>
             );
           })}

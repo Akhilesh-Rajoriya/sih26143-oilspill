@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, SkipBack, SkipForward } from 'lucide-react';
 
 interface TemporalScrubberProps {
-  timeOffset: number; // in hours: -48 to +48
+  timeOffset: number; // in hours: -48 to +24
   onChangeTimeOffset: (hours: number) => void;
   detectionTimestamp?: string;
 }
@@ -29,7 +29,7 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying, timeOffset, onChangeTimeOffset]);
 
-  // Compute displayed timestamp
+  // Compute formatted timestamp
   const getFormattedTime = () => {
     const base = detectionTimestamp ? new Date(detectionTimestamp) : new Date('2024-01-03T10:00:00Z');
     const adjusted = new Date(base.getTime() + timeOffset * 3600 * 1000);
@@ -37,15 +37,31 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
   };
 
   return (
-    <div className="h-16 bg-tactical-darker/95 backdrop-blur border-t border-tactical-border px-6 flex items-center justify-between z-20 shrink-0 font-mono text-xs select-none">
+    <div className="h-16 bg-slate-900 border-t border-slate-800 px-6 flex items-center justify-between z-20 shrink-0 text-xs select-none shadow-sm">
       {/* Play Controls & Time State */}
-      <div className="flex items-center space-x-3 w-72">
+      <div className="flex items-center space-x-2 w-80">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
-          className="p-2 rounded-md bg-tactical-surface border border-tactical-border text-tactical-accent hover:bg-tactical-accent hover:text-tactical-darkest transition-all"
-          title={isPlaying ? 'Pause Animation' : 'Play Drift Simulation'}
+          className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all shadow-sm active:scale-95"
+          title={isPlaying ? 'Pause Simulation' : 'Play Drift Timeline'}
         >
-          {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+          {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+        </button>
+
+        <button
+          onClick={() => onChangeTimeOffset(Math.max(-48, timeOffset - 1))}
+          className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all"
+          title="Step Backward (-1 Hour)"
+        >
+          <SkipBack className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          onClick={() => onChangeTimeOffset(Math.min(24, timeOffset + 1))}
+          className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all"
+          title="Step Forward (+1 Hour)"
+        >
+          <SkipForward className="w-3.5 h-3.5" />
         </button>
 
         <button
@@ -53,32 +69,32 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
             setIsPlaying(false);
             onChangeTimeOffset(0);
           }}
-          className="p-2 rounded-md bg-tactical-surface border border-tactical-border text-slate-400 hover:text-white transition-all"
-          title="Reset to Satellite Capture (T=0)"
+          className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all"
+          title="Reset to Satellite Capture Time (T=0)"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
 
-        <div className="flex flex-col">
-          <div className="flex items-center space-x-1 text-slate-400 text-[10px]">
-            <Clock className="w-3 h-3" />
-            <span>SIMULATION CLOCK:</span>
-          </div>
-          <div className="font-bold text-slate-200 text-xs truncate">{getFormattedTime()}</div>
+        <div className="flex flex-col ml-1">
+          <span className="text-[10px] text-slate-400 font-medium flex items-center space-x-1">
+            <Clock className="w-3 h-3 text-blue-400" />
+            <span>Simulation Clock:</span>
+          </span>
+          <span className="font-semibold text-slate-200 text-xs font-mono truncate">{getFormattedTime()}</span>
         </div>
       </div>
 
-      {/* Scrubber Slider */}
+      {/* Scrubber Slider with Milestones */}
       <div className="flex-1 max-w-2xl px-6 flex flex-col justify-center">
-        <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-          <span className={`${timeOffset < 0 ? 'text-tactical-accent font-bold' : ''}`}>
-            T-48h (SPILLED ORIGIN)
+        <div className="flex justify-between text-[11px] text-slate-400 mb-1 font-medium">
+          <span className={`${timeOffset < 0 ? 'text-blue-400 font-semibold' : ''}`}>
+            Spill Origin Window (-48h)
           </span>
-          <span className={`px-2 py-0.5 rounded ${timeOffset === 0 ? 'bg-red-950 text-red-400 font-bold border border-red-800' : ''}`}>
-            T₀ (SATELLITE DETECTION)
+          <span className={`px-2 py-0.5 rounded-full ${timeOffset === 0 ? 'bg-red-500/20 text-red-300 font-semibold border border-red-500/30' : ''}`}>
+            Satellite Detection (T₀)
           </span>
-          <span className={`${timeOffset > 0 ? 'text-amber-400 font-bold' : ''}`}>
-            T+24h (SHORELINE THREAT)
+          <span className={`${timeOffset > 0 ? 'text-amber-400 font-semibold' : ''}`}>
+            Shoreline Forecast (+24h)
           </span>
         </div>
 
@@ -89,30 +105,31 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
           step="1"
           value={timeOffset}
           onChange={(e) => onChangeTimeOffset(parseInt(e.target.value))}
-          className="w-full h-1.5 bg-tactical-surface rounded-lg appearance-none cursor-pointer accent-tactical-accent focus:outline-none"
+          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 focus:outline-none"
         />
 
-        <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-          <span>Hindcast Reconstruction</span>
-          <span className="text-tactical-accent font-bold">
-            {timeOffset > 0 ? `+${timeOffset}h Forecast` : timeOffset < 0 ? `${timeOffset}h Hindcast` : 'T=0 Satellite Capture'}
+        <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+          <span>Lagrangian Hindcast (Source Tracking)</span>
+          <span className="text-blue-400 font-semibold font-mono">
+            {timeOffset > 0 ? `+${timeOffset}h Dispersion Forecast` : timeOffset < 0 ? `${timeOffset}h Hindcast Backtrack` : 'T=0 Satellite Capture Instant'}
           </span>
-          <span>Forward Dispersion</span>
+          <span>Forward Dispersion Modeling</span>
         </div>
       </div>
 
       {/* Mode Badge */}
-      <div className="hidden sm:flex items-center space-x-2 w-48 justify-end">
-        <div className={`px-2.5 py-1 rounded text-[11px] font-bold border ${
+      <div className="hidden sm:flex items-center space-x-2 w-52 justify-end">
+        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${
           timeOffset < 0
-            ? 'bg-cyan-950 border-cyan-800 text-cyan-400'
+            ? 'bg-blue-500/10 border-blue-500/30 text-blue-300'
             : timeOffset > 0
-            ? 'bg-amber-950 border-amber-800 text-amber-400'
-            : 'bg-red-950 border-red-800 text-red-400'
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            : 'bg-red-500/10 border-red-500/30 text-red-300'
         }`}>
-          {timeOffset < 0 ? 'HINDCAST BACKTRACK' : timeOffset > 0 ? 'FORWARD PREDICTION' : 'SAR OBSERVATION'}
+          {timeOffset < 0 ? 'Hindcast Reconstruction' : timeOffset > 0 ? 'Forward Shoreline Risk' : 'Satellite SAR Capture'}
         </div>
       </div>
     </div>
   );
 };
+

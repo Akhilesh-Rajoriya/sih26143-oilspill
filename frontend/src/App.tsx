@@ -4,7 +4,7 @@ import { TacticalMap } from './components/TacticalMap';
 import { TemporalScrubber } from './components/TemporalScrubber';
 import { SuspectTriagePanel } from './components/SuspectTriagePanel';
 import { UploadModal } from './components/UploadModal';
-import { getHealth, getPresets, runDefaultScenario, analyzeUploadedImage } from './api/client';
+import { getHealth, getPresets, runDefaultScenario, runPresetScenario, analyzeUploadedImage } from './api/client';
 import type { ScenarioResult, SystemHealth, RegionPreset } from './types';
 
 export const App: React.FC = () => {
@@ -59,12 +59,31 @@ export const App: React.FC = () => {
     }
   };
 
+  // Run Selected Benchmark Preset (Mumbai, Gujarat, Ennore)
+  const handleSelectPreset = async (regionKey: string) => {
+    setIsLoading(true);
+    try {
+      const res = await runPresetScenario(regionKey);
+      setScenario(res);
+      setSelectedRegion(regionKey);
+      setTimeOffsetHours(0);
+      if (res.candidates.length > 0) {
+        setSelectedMmsi(res.candidates[0].mmsi);
+      }
+    } catch (err: any) {
+      alert(`Simulation failed: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Upload custom image
   const handleUploadImage = async (file: File, regionKey: string) => {
     setIsLoading(true);
     try {
       const res = await analyzeUploadedImage(file, regionKey);
       setScenario(res);
+      setSelectedRegion(regionKey);
       setTimeOffsetHours(0);
       if (res.candidates.length > 0) {
         setSelectedMmsi(res.candidates[0].mmsi);
@@ -79,13 +98,16 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-tactical-darkest text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* Top Navigation */}
       <Navbar
         health={health}
         regions={regions}
         selectedRegion={selectedRegion}
-        onSelectRegion={setSelectedRegion}
+        onSelectRegion={(reg) => {
+          setSelectedRegion(reg);
+          handleSelectPreset(reg);
+        }}
         onRunDefault={handleRunDefault}
         onOpenUpload={() => setIsUploadOpen(true)}
         onExportReport={handleExportReport}
@@ -127,6 +149,7 @@ export const App: React.FC = () => {
         regions={regions}
         sampleImages={sampleImages}
         onUpload={handleUploadImage}
+        onSelectPreset={handleSelectPreset}
         isLoading={isLoading}
       />
     </div>

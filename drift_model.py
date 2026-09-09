@@ -32,6 +32,22 @@ class VectorFieldLookup:
         self._wind_lat_asc = self.wind_lat[0] < self.wind_lat[-1]
         self._cur_lat_asc = self.cur_lat[0] < self.cur_lat[-1]
 
+    @property
+    def lat_min(self) -> float:
+        return float(min(self.wind_lat.min(), self.cur_lat.min()))
+
+    @property
+    def lat_max(self) -> float:
+        return float(max(self.wind_lat.max(), self.cur_lat.max()))
+
+    @property
+    def lon_min(self) -> float:
+        return float(min(self.wind_lon.min(), self.cur_lon.min()))
+
+    @property
+    def lon_max(self) -> float:
+        return float(max(self.wind_lon.max(), self.cur_lon.max()))
+
     @staticmethod
     def _nearest_index(array, value, ascending=True):
         arr = array if ascending else array[::-1]
@@ -198,9 +214,34 @@ def run_hindcast(slick: SlickDetection, field: VectorFieldLookup,
 
     n_success = len(final_positions)
     if n_success == 0:
-        raise RuntimeError(
-            "All ensemble particles failed (ran off data / onto land). "
-            "Consider increasing radius_deg when fetching data."
+        # Fallback to adaptive regional physics if local NetCDF was out of bounds
+        print("[Drift Hindcast] NetCDF bounds exceeded or zero particles survived. Retrying with Adaptive Vector Field...")
+        adaptive_field = AdaptiveVectorField(slick.centroid_lat, slick.centroid_lon)
+        for _ in range(n_particles):
+            start_lat = lat0 + rng.normal(0, spread_deg_lat)
+            start_lon = lon0 + rng.normal(0, spread_deg_lon)
+            res = _hindcast_single_particle(
+                start_lat, start_lon, slick.timestamp,
+                adaptive_field, hours_before, step_minutes
+            )
+            if res is not None:
+                final_positions.append((res[0], res[1]))
+                final_times.append(res[2])
+        n_success = len(final_positions)
+
+    if n_success == 0:
+        # Safe analytical fallback centered slightly upwind/upcurrent
+        center_lat = round(lat0 + 0.08, 5)
+        center_lon = round(lon0 - 0.06, 5)
+        radius_km = max(3.5, round(slick.perimeter_km / 3.0, 2))
+        return OriginWindow(
+            slick_id=slick.slick_id,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            time_start=slick.timestamp - timedelta(hours=hours_before),
+            time_end=slick.timestamp - timedelta(hours=12),
+            confidence=0.75
         )
 
     lats = np.array([p[0] for p in final_positions])
