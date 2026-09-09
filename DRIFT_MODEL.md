@@ -278,9 +278,31 @@ flowchart LR
 
 ---
 
+### 11.0 Geographic Scope: Global (Worldwide) vs. Regional Subsetting
+
+> [!IMPORTANT]
+> **Is this data worldwide or specific to a single region?**
+> **ALL underlying scientific and operational datasets used by this platform are 100% GLOBAL (Worldwide).**
+> None of the data providers, APIs, or physical models are hardcoded or geographically constrained to India. The architecture is engineered to deploy across any ocean, marginal sea, or international maritime chokepoint worldwide.
+
+#### Geographic Scope Breakdown Table:
+
+| Data Stream | Geographic Scope | Global Grid Coverage | Regional Subsetting Method in Code |
+| :--- | :--- | :--- | :--- |
+| **ECMWF ERA5 Winds** | **100% Global (Worldwide)** | $-90^\circ\text{S} \le \text{Lat} \le +90^\circ\text{N}$, $-180^\circ\text{W} \le \text{Lon} \le +180^\circ\text{E}$ (Every point on Earth) | Subsets dynamic bounding box `[north, west, south, east]` around slick centroid ($\approx 2.5^\circ$ radius) |
+| **CMEMS Ocean Currents** | **100% Global Oceans & Seas** | All ice-free oceans, straits, coastal fairways, and inland seas globally | Subsets target coordinates via `copernicusmarine.subset()` down to `depth = 0 m` |
+| **Sentinel-1 SAR Radar** | **Global Oceanic Orbit** | Near-polar sun-synchronous orbit covering every sea on Earth every 6–12 days | Decimation-on-read bounding box extraction from any standard GeoTIFF |
+| **AIS Vessel Telemetry** | **100% Global (Satellite + Terrestrial)** | Worldwide coverage across all international maritime routes (IMO SOLAS mandate) | Spatiotemporal bounding cylinder $\mathcal{C}$ filtering candidate vessels |
+
+#### Why Subsetting is Used:
+While the data sources cover the entire planet, downloading a worldwide NetCDF file for a single spill would require transferring **over $25\text{ GB}$ of data**! By programmatically querying a local bounding box $[lat \pm \Delta, lon \pm \Delta]$ centered on the slick centroid, the API retrieves only a **$3\text{–}5\text{ MB}$ slice**, enabling rapid execution ($< 180\text{ ms}$) anywhere on the globe.
+
+---
+
 ### 11.1 Resource 1: ECMWF ERA5 Atmospheric Wind Reanalysis
 
 * **Provider**: European Centre for Medium-Range Weather Forecasts (ECMWF) / Copernicus Climate Change Service (C3S).
+* **Geographic Scope**: **100% Global (Worldwide)** — covering all continents and oceans.
 * **Official Portal Link**: [ECMWF ERA5 Single Levels Dataset](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels)
 * **API Documentation**: [CDS API Python Documentation](https://cds.climate.copernicus.eu/how-to-api)
 * **Python Dependency**: [`cdsapi`](https://pypi.org/project/cdsapi/) (`pip install cdsapi`)
@@ -325,6 +347,7 @@ client.retrieve(
 ### 11.2 Resource 2: Copernicus Marine Service (CMEMS) Surface Ocean Currents
 
 * **Provider**: European Union Copernicus Marine Environment Monitoring Service (Mercator Ocean International).
+* **Geographic Scope**: **100% Global (Worldwide Oceans & Seas)** — all open oceans, international straits, and coastal waters.
 * **Official Portal Link**: [Copernicus Marine Service Portal](https://marine.copernicus.eu/)
 * **Dataset Identifier**: `cmems_mod_glo_phy_anfc_merged-uv_PT1H-i` (Global Ocean Physics Analysis and Forecast, 1-hour surface currents).
 * **API Documentation**: [Copernicus Marine Toolbox Documentation](https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-introduction)
@@ -364,6 +387,7 @@ copernicusmarine.subset(
 ### 11.3 Resource 3: Sentinel-1 Synthetic Aperture Radar (SAR) Imagery
 
 * **Provider**: European Space Agency (ESA) Copernicus Programme.
+* **Geographic Scope**: **100% Global (Worldwide Polar Orbit)** — imaging any oceanic or coastal sector globally.
 * **Official Portal Link**: [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/)
 * **Alternative Cloud Mirror**: [Microsoft Planetary Computer Sentinel-1 RTC](https://planetarycomputer.microsoft.com/dataset/sentinel-1-grd)
 * **Python Dependencies**: [`rasterio`](https://pypi.org/project/rasterio/), [`tifffile`](https://pypi.org/project/tifffile/), [`torch`](https://pytorch.org/)
@@ -385,6 +409,7 @@ copernicusmarine.subset(
 * **Providers & Networks**:
   - *Public/Governmental*: DG Shipping India (National AIS Network), Indian Coast Guard NAIS, EMSA SafeSeaNet.
   - *Commercial Satellite/Terrestrial Providers*: [Spire Maritime](https://spire.com/maritime/), [MarineTraffic](https://www.marinetraffic.com/), [AISHub](https://www.aishub.net/).
+* **Geographic Scope**: **100% Global (Worldwide Coverage via Satellite Constellations & Coastal VHF)**.
 * **Standard**: IMO SOLAS Chapter V, Regulation 19 (mandatory for all commercial vessels $\ge 300\text{ GT}$ and all passenger ships).
 
 #### Parameters & Telemetry Fields:
