@@ -6,6 +6,8 @@ for the Web GIS Tactical Dashboard.
 import os
 import glob
 import json
+import shutil
+import tempfile
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -137,13 +139,14 @@ def run_default_scenario() -> ScenarioResult:
 @app.post("/api/v1/scenarios/run-preset/{region_key}", response_model=ScenarioResult)
 def run_preset_scenario(region_key: str) -> ScenarioResult:
     """
-    Executes or loads pre-computed verified scenario for selected Indian coastal regions:
-    'mumbai_coast', 'gujarat_kutch', or 'ennore_port'.
+    Executes or loads pre-computed verified scenario for selected maritime regions:
+    'mumbai_coast', 'gujarat_kutch', 'ennore_port', or 'global_corridor'.
     """
     preset_files = {
         "mumbai_coast": "default_scenario.json",
         "gujarat_kutch": "benchmark_gujarat.json",
         "ennore_port": "benchmark_ennore.json",
+        "global_corridor": "benchmark_global.json",
     }
     target_filename = preset_files.get(region_key, "default_scenario.json")
     cached_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", target_filename)
@@ -186,9 +189,11 @@ async def analyze_uploaded_image(
 ) -> ScenarioResult:
     """
     Accepts ANY uploaded SAR image from judges/users.
+    Streams directly to disk in 64KB chunks to prevent RAM blowup on 512MB free tier.
     Automatically segments the oil slick, executes adaptive ocean drift physics,
     and returns ranked AIS suspect attribution.
     """
+    tmp_path = None
     try:
         # 1. Resolve bounding box
         if south is not None and north is not None and west is not None and east is not None:
@@ -204,16 +209,20 @@ async def analyze_uploaded_image(
         else:
             dt = datetime.utcnow()
 
-        # 3. Read image contents into memory
-        contents = await file.read()
-        if not contents:
+        # 3. Stream uploaded file directly to disk in 64KB chunks (RAM footprint < 100KB)
+        file_ext = os.path.splitext(file.filename)[1] or ".tif"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
+            tmp_path = tmp_file.name
+            shutil.copyfileobj(file.file, tmp_file, length=64 * 1024)
+
+        if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
         slick_id = f"custom_{os.path.splitext(file.filename)[0]}_{int(datetime.utcnow().timestamp())}"
 
-        # 4. Run pipeline (auto-adapts if NetCDF files are not available)
+        # 4. Run pipeline directly using disk path with decimation-on-read
         result = run_pipeline(
-            sar_source=contents,
+            sar_source=tmp_path,
             bbox=bbox,
             detection_time=dt,
             slick_id=slick_id,
@@ -227,6 +236,12 @@ async def analyze_uploaded_image(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to analyze uploaded image: {str(e)}")
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 
 # -------------------------------------------------------------

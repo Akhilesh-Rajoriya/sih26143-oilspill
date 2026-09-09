@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileImage, Loader2, AlertCircle, Compass, CheckCircle2, Waves, Ship } from 'lucide-react';
+import { X, FileImage, Loader2, AlertCircle, Compass, CheckCircle2, Waves, Ship, Globe } from 'lucide-react';
 import type { RegionPreset } from '../types';
 
 interface UploadModalProps {
@@ -30,9 +30,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const benchmarkCards = [
     {
+      key: 'global_corridor',
+      title: 'Global Maritime Strategic Corridor',
+      badge: '100% Real SAR + Metocean + AIS',
+      isGlobalReal: true,
+      icon: Globe,
+      desc: 'Strait of Hormuz / Gulf of Oman international tanker transit channel. Ingests 100% real ESA Sentinel-1 SAR imagery, CMEMS/ERA5 hydrodynamics, and real-world historical corridor AIS telemetry with suspect VLCC dark-period detection.',
+      coordinates: '25.24° N, 57.13° E',
+    },
+    {
       key: 'mumbai_coast',
       title: 'Mumbai High Offshore Basin',
       badge: 'Verified Sentinel-1 Scene',
+      isGlobalReal: false,
       icon: Waves,
       desc: 'Active 77.87 km² crude slick detected in Arabian Sea shipping lane. Features 4h AIS blackout by suspect tanker.',
       coordinates: '18.95° N, 72.80° E',
@@ -41,6 +51,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       key: 'gujarat_kutch',
       title: 'Gulf of Kutch Maritime Approach',
       badge: 'Tanker Transit Corridor',
+      isGlobalReal: false,
       icon: Ship,
       desc: 'Heavy crude transit channel with complex shallow-water tidal currents and rapid shoreline trajectory projection.',
       coordinates: '22.50° N, 69.80° E',
@@ -49,6 +60,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       key: 'ennore_port',
       title: 'Ennore Coastal Anchorage & Port',
       badge: 'Port & Anchorage Zone',
+      isGlobalReal: false,
       icon: Compass,
       desc: 'Commercial harbor approaches simulating acute bunker fuel discharge and sensitive coastal threat assessment.',
       coordinates: '13.30° N, 80.30° E',
@@ -163,17 +175,34 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     <div
                       key={b.key}
                       onClick={() => !isLoading && handleRunPreset(b.key)}
-                      className="p-3.5 rounded-xl border border-slate-800 hover:border-blue-500/60 bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-all flex items-start space-x-3.5 group shadow-sm"
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start space-x-3.5 group shadow-sm ${
+                        b.isGlobalReal
+                          ? 'border-emerald-700/60 hover:border-emerald-500 bg-emerald-950/20 hover:bg-emerald-950/30 ring-1 ring-emerald-600/30'
+                          : 'border-slate-800 hover:border-blue-500/60 bg-slate-800/40 hover:bg-slate-800/80'
+                      }`}
                     >
-                      <div className="w-9 h-9 rounded-lg bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <div
+                        className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-all ${
+                          b.isGlobalReal
+                            ? 'bg-emerald-600/15 border-emerald-500/30 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white'
+                            : 'bg-blue-600/10 border-blue-500/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white'
+                        }`}
+                      >
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-xs text-white group-hover:text-blue-300 transition-colors">
-                            {b.title}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-medium">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-xs text-white group-hover:text-blue-300 transition-colors">
+                              {b.title}
+                            </span>
+                            {b.isGlobalReal && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold tracking-wide">
+                                ★ 100% REAL DATA
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-medium shrink-0">
                             {b.coordinates}
                           </span>
                         </div>

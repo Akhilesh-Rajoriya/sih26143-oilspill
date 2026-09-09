@@ -39,6 +39,13 @@ REGIONS = {
         lon_min=80.2,
         lon_max=80.6,
     ),
+    "global_corridor": RegionOfInterest(
+        name="Global Maritime Corridor (Strait of Hormuz / Gulf of Oman)",
+        lat_min=24.8,
+        lat_max=25.8,
+        lon_min=56.5,
+        lon_max=57.8,
+    ),
 }
 
 DEFAULT_ROI = REGIONS["mumbai_coast"]

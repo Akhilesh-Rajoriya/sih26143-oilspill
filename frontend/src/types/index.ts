@@ -77,6 +77,9 @@ export interface ScenarioResult {
     currents_source: string;
     ais_mode: string;
     num_candidates: number;
+    validation_tier?: string;
+    sar_sensor?: string;
+    [key: string]: any;
   };
 }
 

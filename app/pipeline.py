@@ -15,6 +15,7 @@ import cv2
 
 try:
     import rasterio
+    from rasterio.enums import Resampling
     HAS_RASTERIO = True
 except ImportError:
     HAS_RASTERIO = False
@@ -36,16 +37,60 @@ from app.ais.scoring import score_candidate_tracks
 def load_sar_raster(sar_source: Union[str, np.ndarray, bytes], max_dim: int = 512) -> np.ndarray:
     """
     Safely decodes SAR or satellite imagery from bytes, file path, or numpy array.
-    Supports GeoTIFF, TIFF, PNG, JPG with automatic memory-safe downsampling to max_dim
-    to prevent cloud memory exhaustion.
+    Supports GeoTIFF, TIFF, PNG, JPG with automatic direct-from-disk decimation downsampling
+    to max_dim to prevent cloud memory exhaustion on 512MB free tier.
     """
     raw_array = None
 
-    if isinstance(sar_source, bytes):
+    if isinstance(sar_source, str):
+        if not os.path.exists(sar_source):
+            raise FileNotFoundError(f"SAR image file not found: {sar_source}")
+        if HAS_RASTERIO:
+            try:
+                with rasterio.open(sar_source) as src:
+                    scale = max(src.height / float(max_dim), src.width / float(max_dim), 1.0)
+                    out_h = max(32, int(src.height / scale))
+                    out_w = max(32, int(src.width / scale))
+                    raw_array = src.read(
+                        out_shape=(src.count, out_h, out_w),
+                        resampling=Resampling.bilinear
+                    ).astype(np.float32)
+            except Exception as e:
+                print(f"[pipeline] rasterio open failed on {sar_source}: {e}")
+                raw_array = None
+
+        if raw_array is None:
+            cv_img = cv2.imread(sar_source, cv2.IMREAD_UNCHANGED)
+            if cv_img is not None:
+                if cv_img.ndim == 2:
+                    raw_array = np.stack([cv_img, cv_img], axis=0).astype(np.float32)
+                elif cv_img.ndim == 3:
+                    raw_array = np.transpose(cv_img, (2, 0, 1)).astype(np.float32)
+
+        if raw_array is None:
+            try:
+                from PIL import Image
+                with Image.open(sar_source) as pil_img:
+                    pil_img.thumbnail((max_dim, max_dim))
+                    arr = np.array(pil_img).astype(np.float32)
+                    if arr.ndim == 2:
+                        raw_array = np.stack([arr, arr], axis=0)
+                    elif arr.ndim == 3:
+                        raw_array = np.transpose(arr, (2, 0, 1))
+            except Exception:
+                pass
+
+    elif isinstance(sar_source, bytes):
         if HAS_RASTERIO:
             try:
                 with rasterio.open(io.BytesIO(sar_source)) as src:
-                    raw_array = src.read().astype(np.float32)
+                    scale = max(src.height / float(max_dim), src.width / float(max_dim), 1.0)
+                    out_h = max(32, int(src.height / scale))
+                    out_w = max(32, int(src.width / scale))
+                    raw_array = src.read(
+                        out_shape=(src.count, out_h, out_w),
+                        resampling=Resampling.bilinear
+                    ).astype(np.float32)
             except Exception:
                 raw_array = None
 
@@ -62,6 +107,7 @@ def load_sar_raster(sar_source: Union[str, np.ndarray, bytes], max_dim: int = 51
             try:
                 from PIL import Image
                 pil_img = Image.open(io.BytesIO(sar_source))
+                pil_img.thumbnail((max_dim, max_dim))
                 arr = np.array(pil_img).astype(np.float32)
                 if arr.ndim == 2:
                     raw_array = np.stack([arr, arr], axis=0)
@@ -69,23 +115,6 @@ def load_sar_raster(sar_source: Union[str, np.ndarray, bytes], max_dim: int = 51
                     raw_array = np.transpose(arr, (2, 0, 1))
             except Exception:
                 pass
-
-    elif isinstance(sar_source, str):
-        if not os.path.exists(sar_source):
-            raise FileNotFoundError(f"SAR image file not found: {sar_source}")
-        if HAS_RASTERIO:
-            try:
-                with rasterio.open(sar_source) as src:
-                    raw_array = src.read().astype(np.float32)
-            except Exception:
-                raw_array = None
-        if raw_array is None:
-            cv_img = cv2.imread(sar_source, cv2.IMREAD_UNCHANGED)
-            if cv_img is not None:
-                if cv_img.ndim == 2:
-                    raw_array = np.stack([cv_img, cv_img], axis=0).astype(np.float32)
-                elif cv_img.ndim == 3:
-                    raw_array = np.transpose(cv_img, (2, 0, 1)).astype(np.float32)
 
     elif isinstance(sar_source, np.ndarray):
         raw_array = sar_source.astype(np.float32)
@@ -95,7 +124,13 @@ def load_sar_raster(sar_source: Union[str, np.ndarray, bytes], max_dim: int = 51
     if raw_array is None:
         raise ValueError("Could not decode satellite raster from the provided file or bytes.")
 
-    # Downsample if spatial dimensions exceed max_dim
+    # Ensure 2 channels minimum (VV + VH for SAR U-Net)
+    if raw_array.ndim == 2:
+        raw_array = np.stack([raw_array, raw_array], axis=0)
+    elif raw_array.ndim == 3 and raw_array.shape[0] == 1:
+        raw_array = np.concatenate([raw_array, raw_array], axis=0)
+
+    # Downsample if spatial dimensions exceed max_dim (safety catch)
     c, h, w = raw_array.shape
     if h > max_dim or w > max_dim:
         scale = min(max_dim / float(h), max_dim / float(w))

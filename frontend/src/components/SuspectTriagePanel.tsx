@@ -138,6 +138,15 @@ export const SuspectTriagePanel: React.FC<SuspectTriagePanelProps> = ({
               <span className="font-mono text-slate-300 text-[11px]">±{scenario.origin.radius_km.toFixed(2)} km</span>
             </div>
           </div>
+
+          {scenario.metadata?.validation_tier && (
+            <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400">Data Ingestion:</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/40">
+                ★ {scenario.metadata.validation_tier}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Candidate Vessel Attribution Cards */}

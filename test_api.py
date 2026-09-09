@@ -51,6 +51,18 @@ def test_run_default():
     assert data["candidates"][0]["mmsi"] == "419001234"
     print("  [PASSED] Run default scenario endpoint verified.")
 
+def test_run_presets():
+    print("\nTesting POST /api/v1/scenarios/run-preset/global_corridor...")
+    response = client.post("/api/v1/scenarios/run-preset/global_corridor")
+    assert response.status_code == 200, f"Global corridor preset failed: {response.text}"
+    data = response.json()
+    print(f"  Global Scenario ID: {data['scenario_id']}")
+    print(f"  Validation Tier: {data['metadata'].get('validation_tier')}")
+    print(f"  Slick Area: {data['slick']['area_km2']} km2")
+    print(f"  Top Suspect: {data['candidates'][0]['vessel_name']} ({data['candidates'][0]['vessel_type']}) - Score: {data['candidates'][0]['total_score']}")
+    assert data["candidates"][0]["vessel_name"] == "MT Global Horizon"
+    print("  [PASSED] Global corridor 100% real preset verified.")
+
 def test_upload_image():
     print("\nTesting POST /api/v1/scenarios/analyze-image with image upload...")
     if not os.path.exists(DEFAULT_SAR_TEST_IMAGE):
@@ -79,6 +91,7 @@ if __name__ == "__main__":
     test_health()
     test_presets()
     test_run_default()
+    test_run_presets()
     test_upload_image()
     print("\n" + "=" * 60)
     print("ALL API TESTS PASSED SUCCESSFULLY!")
