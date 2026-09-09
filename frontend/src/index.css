@@ -60,3 +60,32 @@
 .leaflet-control-zoom a:hover {
   background-color: #182438 !important;
 }
+
+/* Print Dossier Optimization */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force background colors and borders in Chrome/Edge/Firefox */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .leaflet-container,
+  .leaflet-control-container {
+    display: none !important;
+  }
+}

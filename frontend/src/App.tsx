@@ -4,6 +4,7 @@ import { TacticalMap } from './components/TacticalMap';
 import { TemporalScrubber } from './components/TemporalScrubber';
 import { SuspectTriagePanel } from './components/SuspectTriagePanel';
 import { UploadModal } from './components/UploadModal';
+import { IncidentDossier } from './components/IncidentDossier';
 import { getHealth, getPresets, runDefaultScenario, runPresetScenario, analyzeUploadedImage } from './api/client';
 import type { ScenarioResult, SystemHealth, RegionPreset } from './types';
 
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
+  const [isDossierOpen, setIsDossierOpen] = useState<boolean>(false);
 
   // Initialize health & presets
   useEffect(() => {
@@ -115,66 +117,84 @@ export const App: React.FC = () => {
   };
 
   const handleExportReport = () => {
-    window.print();
+    setIsDossierOpen(true);
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* Top Navigation */}
-      <Navbar
-        health={health}
-        regions={regions}
-        selectedRegion={selectedRegion}
-        onSelectRegion={(reg) => {
-          setSelectedRegion(reg);
-          handleSelectPreset(reg);
-        }}
-        onRunDefault={handleRunDefault}
-        onOpenUpload={() => setIsUploadOpen(true)}
-        onExportReport={handleExportReport}
-        isLoading={isLoading}
-        executionTime={scenario?.execution_time_seconds}
-      />
+    <>
+      {/* Screen Layout (Hidden during print) */}
+      <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans print:hidden">
+        {/* Top Navigation */}
+        <Navbar
+          health={health}
+          regions={regions}
+          selectedRegion={selectedRegion}
+          onSelectRegion={(reg) => {
+            setSelectedRegion(reg);
+            handleSelectPreset(reg);
+          }}
+          onRunDefault={handleRunDefault}
+          onOpenUpload={() => setIsUploadOpen(true)}
+          onExportReport={handleExportReport}
+          isLoading={isLoading}
+          executionTime={scenario?.execution_time_seconds}
+        />
 
-      {/* Main Tactical Ops Center Viewport */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Left/Center: Interactive Geospatial Tactical Map */}
-        <div className="flex-1 flex flex-col h-full relative">
-          <TacticalMap
+        {/* Main Tactical Ops Center Viewport */}
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Left/Center: Interactive Geospatial Tactical Map */}
+          <div className="flex-1 flex flex-col h-full relative">
+            <TacticalMap
+              scenario={scenario}
+              timeOffsetHours={timeOffsetHours}
+              selectedMmsi={selectedMmsi}
+              onSelectVessel={setSelectedMmsi}
+              regionName={regions[selectedRegion]?.name}
+            />
+
+            {/* Bottom Interactive Temporal Scrubber Slider */}
+            <TemporalScrubber
+              timeOffset={timeOffsetHours}
+              onChangeTimeOffset={setTimeOffsetHours}
+              detectionTimestamp={scenario?.slick.timestamp}
+            />
+          </div>
+
+          {/* Right: Suspect Vessel Triage & Evidence Panel */}
+          <SuspectTriagePanel
             scenario={scenario}
-            timeOffsetHours={timeOffsetHours}
             selectedMmsi={selectedMmsi}
             onSelectVessel={setSelectedMmsi}
-            regionName={regions[selectedRegion]?.name}
-          />
-
-          {/* Bottom Interactive Temporal Scrubber Slider */}
-          <TemporalScrubber
-            timeOffset={timeOffsetHours}
-            onChangeTimeOffset={setTimeOffsetHours}
-            detectionTimestamp={scenario?.slick.timestamp}
           />
         </div>
 
-        {/* Right: Suspect Vessel Triage & Evidence Panel */}
-        <SuspectTriagePanel
+        {/* Custom SAR Upload Modal */}
+        <UploadModal
+          isOpen={isUploadOpen}
+          onClose={() => setIsUploadOpen(false)}
+          regions={regions}
+          sampleImages={sampleImages}
+          onUpload={handleUploadImage}
+          onSelectPreset={handleSelectPreset}
+          isLoading={isLoading}
+        />
+
+        {/* Incident Dossier Preview Modal */}
+        <IncidentDossier
           scenario={scenario}
-          selectedMmsi={selectedMmsi}
-          onSelectVessel={setSelectedMmsi}
+          regionName={regions[selectedRegion]?.name}
+          isOpen={isDossierOpen}
+          onClose={() => setIsDossierOpen(false)}
         />
       </div>
 
-      {/* Custom SAR Upload Modal */}
-      <UploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        regions={regions}
-        sampleImages={sampleImages}
-        onUpload={handleUploadImage}
-        onSelectPreset={handleSelectPreset}
-        isLoading={isLoading}
+      {/* Official Legal Evidence Print Container (Active strictly during window.print) */}
+      <IncidentDossier
+        scenario={scenario}
+        regionName={regions[selectedRegion]?.name}
+        isPrintOnly={true}
       />
-    </div>
+    </>
   );
 };
 

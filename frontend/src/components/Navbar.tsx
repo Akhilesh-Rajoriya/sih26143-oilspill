@@ -128,14 +128,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="sm:hidden">Upload</span>
         </button>
 
-        {/* Export Report */}
+        {/* Export Report / Dossier */}
         <button
           onClick={onExportReport}
-          className="flex items-center space-x-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-all shadow-sm"
-          title="Print Incident Report Dossier"
+          className="flex items-center space-x-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white text-xs font-medium transition-all shadow-sm active:scale-95"
+          title="Preview & Print Official Incident Dossier (PDF)"
         >
-          <FileDown className="w-3.5 h-3.5" />
-          <span className="hidden xl:inline">Export</span>
+          <FileDown className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="hidden sm:inline">Dossier</span>
         </button>
       </div>
     </header>
