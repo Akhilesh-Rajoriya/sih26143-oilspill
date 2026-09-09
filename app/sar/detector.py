@@ -79,19 +79,22 @@ class SARSpillDetector:
             print(f"[SAR Detector] Error loading U-Net: {e}. Falling back to adaptive radar thresholding.")
             self.model = None
 
-    def preprocess_sar(self, raster: np.ndarray, target_size: Tuple[int, int] = (512, 512)) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    def preprocess_sar(self, raster: np.ndarray, target_size: Tuple[int, int] = (256, 256)) -> Tuple[torch.Tensor, Tuple[int, int]]:
         """
         Preprocesses SAR radar raster, preserving BOTH VV and VH channels.
-        Optimized for cloud memory limits: resizes before normalization
-        to keep memory footprint under 5MB instead of 130MB+.
+        Optimized for 512MB cloud memory limits: resizes to target_size (256x256)
+        to keep forward pass activations under 60MB instead of 250MB+.
         """
+        if self.device.type == "cpu":
+            torch.set_num_threads(1)
+
         if raster.ndim == 2:
             raster = np.stack([raster, raster], axis=0)
 
         orig_shape = raster.shape[1:]
 
-        # Downsample large rasters immediately to target_size to prevent OOM
-        if orig_shape[0] > target_size[0] or orig_shape[1] > target_size[1]:
+        # Downsample rasters to target_size to prevent OOM
+        if orig_shape[0] != target_size[0] or orig_shape[1] != target_size[1]:
             c0 = cv2.resize(raster[0].astype(np.float32), (target_size[1], target_size[0]), interpolation=cv2.INTER_AREA)
             c1 = cv2.resize(raster[1].astype(np.float32), (target_size[1], target_size[0]), interpolation=cv2.INTER_AREA)
             img = np.stack([c0, c1], axis=0)
@@ -105,29 +108,35 @@ class SARSpillDetector:
             img[c] = (img[c] - m) / (s + 1e-8)
 
         tensor = torch.from_numpy(img).unsqueeze(0)
-        return tensor.to(self.device), target_size
+        return tensor.to(self.device), orig_shape
 
     def detect_mask(self, raster: np.ndarray) -> Tuple[np.ndarray, str, float]:
         """
         Infers binary oil spill mask using the trained U-Net, with adaptive
         thresholding as a transparent fallback. Returns (mask, method_used, confidence).
         """
-        tensor, working_shape = self.preprocess_sar(raster)
+        tensor, orig_shape = self.preprocess_sar(raster)
         pred_mask = None
         mean_confidence = 0.0
         method_used = "unet"
 
         if self.model is not None:
-            with torch.no_grad():
-                logits = self.model(tensor)
-                probs = torch.sigmoid(logits).squeeze().cpu().numpy()
-                pred_mask = (probs > 0.5).astype(np.uint8)
-                detected_pixels = probs[pred_mask > 0]
-                if len(detected_pixels) > 0:
-                    mean_confidence = float(detected_pixels.mean())
-                else:
-                    mean_confidence = float(probs.max())
-                del tensor, logits, probs
+            try:
+                with torch.inference_mode():
+                    logits = self.model(tensor)
+                    probs = torch.sigmoid(logits).squeeze().cpu().numpy()
+                    pred_mask = (probs > 0.5).astype(np.uint8)
+                    detected_pixels = probs[pred_mask > 0]
+                    if len(detected_pixels) > 0:
+                        mean_confidence = float(detected_pixels.mean())
+                    else:
+                        mean_confidence = float(probs.max())
+                    del logits, probs
+            except Exception as e:
+                print(f"[SAR Detector] Notice: U-Net forward pass ({e}), switching to adaptive radar.")
+                pred_mask = None
+            finally:
+                del tensor
 
         if pred_mask is None or np.sum(pred_mask) < 25:
             method_used = "classical_fallback"
@@ -141,6 +150,10 @@ class SARSpillDetector:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
             pred_mask = cv2.morphologyEx(adaptive, cv2.MORPH_OPEN, kernel)
             mean_confidence = 0.5
+
+        # Resize mask back to original raster spatial dimensions if needed
+        if pred_mask.shape != orig_shape:
+            pred_mask = cv2.resize(pred_mask, (orig_shape[1], orig_shape[0]), interpolation=cv2.INTER_NEAREST)
 
         print(f"[SAR Detector] Method used: {method_used}")
         return pred_mask, method_used, mean_confidence

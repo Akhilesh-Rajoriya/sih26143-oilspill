@@ -35,11 +35,16 @@ export const runPresetScenario = async (regionKey: string): Promise<ScenarioResu
 export const analyzeUploadedImage = async (
   file: File,
   regionPreset: string = 'mumbai_coast',
-  bbox?: { south: number; north: number; west: number; east: number }
+  bbox?: { south: number; north: number; west: number; east: number },
+  sectorName?: string
 ): Promise<ScenarioResult> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('region_preset', regionPreset);
+
+  if (sectorName) {
+    formData.append('sector_name', sectorName);
+  }
 
   if (bbox) {
     formData.append('south', bbox.south.toString());
@@ -52,6 +57,7 @@ export const analyzeUploadedImage = async (
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 180000,
   });
   return data;
 };

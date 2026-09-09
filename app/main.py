@@ -186,12 +186,13 @@ async def analyze_uploaded_image(
     east: Optional[float] = Form(None),
     detection_time: Optional[str] = Form(None),
     region_preset: Optional[str] = Form("mumbai_coast"),
+    sector_name: Optional[str] = Form(None),
 ) -> ScenarioResult:
     """
     Accepts ANY uploaded SAR image from judges/users.
     Streams directly to disk in 64KB chunks to prevent RAM blowup on 512MB free tier.
     Automatically segments the oil slick, executes adaptive ocean drift physics,
-    and returns ranked AIS suspect attribution.
+    and returns ranked AIS suspect attribution with new custom maritime sector registration.
     """
     tmp_path = None
     try:
@@ -218,7 +219,8 @@ async def analyze_uploaded_image(
         if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-        slick_id = f"custom_{os.path.splitext(file.filename)[0]}_{int(datetime.utcnow().timestamp())}"
+        clean_basename = os.path.splitext(file.filename)[0].replace("_decimated", "")
+        slick_id = f"custom_{clean_basename}_{int(datetime.utcnow().timestamp())}"
 
         # 4. Run pipeline directly using disk path with decimation-on-read
         result = run_pipeline(
@@ -230,6 +232,19 @@ async def analyze_uploaded_image(
             currents_nc=DEFAULT_CURRENTS_NC,
             ais_mode="synthetic",
         )
+
+        # Attach custom sector metadata for frontend registration
+        resolved_sector_name = sector_name or f"Sector: {clean_basename.replace('_', ' ').title()}"
+        result.metadata["custom_sector"] = {
+            "key": f"custom_{int(datetime.utcnow().timestamp())}",
+            "name": resolved_sector_name,
+            "bbox": {
+                "south": float(bbox[0]),
+                "north": float(bbox[1]),
+                "west": float(bbox[2]),
+                "east": float(bbox[3]),
+            },
+        }
 
         return result
     except HTTPException:

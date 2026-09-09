@@ -144,6 +144,15 @@ def load_sar_raster(sar_source: Union[str, np.ndarray, bytes], max_dim: int = 51
     return raw_array
 
 
+_GLOBAL_DETECTOR: Optional[SARSpillDetector] = None
+
+def get_sar_detector() -> SARSpillDetector:
+    global _GLOBAL_DETECTOR
+    if _GLOBAL_DETECTOR is None:
+        _GLOBAL_DETECTOR = SARSpillDetector(weights_path=MODEL_WEIGHTS_PATH)
+    return _GLOBAL_DETECTOR
+
+
 def run_pipeline(
     sar_source: Union[str, np.ndarray, bytes],
     bbox: Optional[Tuple[float, float, float, float]] = None,
@@ -188,7 +197,7 @@ def run_pipeline(
     sar_raster = load_sar_raster(sar_source, max_dim=512)
 
     # 2. Detect Oil Slick
-    detector = SARSpillDetector(weights_path=MODEL_WEIGHTS_PATH)
+    detector = get_sar_detector()
     mask, method_used, confidence = detector.detect_mask(sar_raster)
     slick = detector.extract_slick_geometry(
         mask=mask,

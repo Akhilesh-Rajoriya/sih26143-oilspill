@@ -77,13 +77,33 @@ export const App: React.FC = () => {
     }
   };
 
-  // Upload custom image
-  const handleUploadImage = async (file: File, regionKey: string) => {
+  // Upload custom image with new maritime sector registration
+  const handleUploadImage = async (
+    file: File,
+    regionKey: string,
+    bbox?: { south: number; north: number; west: number; east: number },
+    sectorName?: string
+  ) => {
     setIsLoading(true);
     try {
-      const res = await analyzeUploadedImage(file, regionKey);
+      const res = await analyzeUploadedImage(file, regionKey, bbox, sectorName);
       setScenario(res);
-      setSelectedRegion(regionKey);
+
+      if (res.metadata?.custom_sector) {
+        const sec = res.metadata.custom_sector;
+        const newKey = sec.key || `custom_${Date.now()}`;
+        setRegions((prev) => ({
+          ...prev,
+          [newKey]: {
+            name: sec.name || sectorName || 'Custom Operational Sector',
+            bbox: sec.bbox || (bbox || { south: 18.6, north: 19.4, west: 72.4, east: 73.2 }),
+          },
+        }));
+        setSelectedRegion(newKey);
+      } else {
+        setSelectedRegion(regionKey);
+      }
+
       setTimeOffsetHours(0);
       if (res.candidates.length > 0) {
         setSelectedMmsi(res.candidates[0].mmsi);
