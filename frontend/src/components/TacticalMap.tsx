@@ -99,27 +99,101 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showForecast, setShowForecast] = useState(true);
   const [showTracks, setShowTracks] = useState(true);
 
-  // Helper to interpolate vessel position along its track based on time offset
+  // Dynamic Oil Slick Geometry & Centroid based on Time Offset
+  const getDynamicSlickState = () => {
+    if (!scenario) return { centroid: [centerLat, centerLon] as [number, number], polygon: [] as [number, number][] };
+
+    const baseCentroid = [scenario.slick.centroid_lat, scenario.slick.centroid_lon] as [number, number];
+    const basePolygon = scenario.slick.polygon;
+
+    if (timeOffsetHours === 0 || basePolygon.length === 0) {
+      return { centroid: baseCentroid, polygon: basePolygon };
+    }
+
+    if (timeOffsetHours > 0) {
+      // Forward Forecast Drift (0h to +24h): Translate slick along forecast trajectory
+      const points = scenario.forecast.points;
+      if (!points || points.length === 0) return { centroid: baseCentroid, polygon: basePolygon };
+
+      const frac = Math.min(1, Math.max(0, timeOffsetHours / 24));
+      const exactIdx = frac * (points.length - 1);
+      const idx = Math.floor(exactIdx);
+      const nextIdx = Math.min(idx + 1, points.length - 1);
+      const subFrac = exactIdx - idx;
+
+      const curLat = points[idx].lat + subFrac * (points[nextIdx].lat - points[idx].lat);
+      const curLon = points[idx].lon + subFrac * (points[nextIdx].lon - points[idx].lon);
+
+      // Slick dispersion expansion scale as oil weathers and spreads over time
+      const scale = 1 + frac * 0.4;
+      const dLat = curLat - baseCentroid[0];
+      const dLon = curLon - baseCentroid[1];
+
+      const driftedPolygon = basePolygon.map(([lat, lon]) => [
+        baseCentroid[0] + (lat - baseCentroid[0]) * scale + dLat,
+        baseCentroid[1] + (lon - baseCentroid[1]) * scale + dLon,
+      ] as [number, number]);
+
+      return { centroid: [curLat, curLon] as [number, number], polygon: driftedPolygon };
+    } else {
+      // Hindcast Backtracking (0h down to -48h): Backtrack smoothly towards spill origin
+      const originLat = scenario.origin.center_lat;
+      const originLon = scenario.origin.center_lon;
+
+      const frac = Math.min(1, Math.max(0, Math.abs(timeOffsetHours) / 48));
+      const curLat = baseCentroid[0] + frac * (originLat - baseCentroid[0]);
+      const curLon = baseCentroid[1] + frac * (originLon - baseCentroid[1]);
+
+      // Reverse weathering (slick was tighter and fresher at initial release)
+      const shrink = Math.max(0.65, 1 - frac * 0.35);
+      const dLat = curLat - baseCentroid[0];
+      const dLon = curLon - baseCentroid[1];
+
+      const backtrackedPolygon = basePolygon.map(([lat, lon]) => [
+        baseCentroid[0] + (lat - baseCentroid[0]) * shrink + dLat,
+        baseCentroid[1] + (lon - baseCentroid[1]) * shrink + dLon,
+      ] as [number, number]);
+
+      return { centroid: [curLat, curLon] as [number, number], polygon: backtrackedPolygon };
+    }
+  };
+
+  const dynamicSlick = getDynamicSlickState();
+
+  // Helper to interpolate vessel position along its route based on time offset (-48h to +24h)
   const getInterpolatedVesselPosition = (track: AISTrack) => {
     if (!track.positions || track.positions.length === 0) return null;
-    if (!scenario) return track.positions[0];
+    const positions = track.positions;
+    if (positions.length === 1) return positions[0];
 
-    // Reference detection time is t=0
-    const refTime = new Date(scenario.slick.timestamp).getTime();
-    const targetTime = refTime + timeOffsetHours * 3600 * 1000;
-
-    // Find nearest reported AIS position
-    let closest = track.positions[0];
-    let minDiff = Infinity;
-    for (const pos of track.positions) {
-      const pTime = new Date(pos.timestamp).getTime();
-      const diff = Math.abs(pTime - targetTime);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = pos;
-      }
+    // Map timeOffsetHours (-48h to 0h) into route progression
+    // Ships transit across the origin area during the -48h to 0h window
+    let progress: number;
+    if (timeOffsetHours <= -48) {
+      progress = 0;
+    } else if (timeOffsetHours >= 0) {
+      progress = 1;
+    } else {
+      progress = (timeOffsetHours + 48) / 48;
     }
-    return closest;
+
+    const exactIdx = progress * (positions.length - 1);
+    const idx = Math.floor(exactIdx);
+    const nextIdx = Math.min(idx + 1, positions.length - 1);
+    const subFrac = exactIdx - idx;
+
+    const lat = positions[idx].lat + subFrac * (positions[nextIdx].lat - positions[idx].lat);
+    const lon = positions[idx].lon + subFrac * (positions[nextIdx].lon - positions[idx].lon);
+    const sog = positions[idx].speed_over_ground + subFrac * (positions[nextIdx].speed_over_ground - positions[idx].speed_over_ground);
+    const cog = positions[idx].course_over_ground;
+
+    return {
+      lat: Number(lat.toFixed(5)),
+      lon: Number(lon.toFixed(5)),
+      timestamp: positions[idx].timestamp,
+      speed_over_ground: Number(sog.toFixed(1)),
+      course_over_ground: cog,
+    };
   };
 
   return (
@@ -153,54 +227,68 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
         {scenario && (
           <>
-            {/* 1. Detected Oil Slick Polygon */}
-            {showSlick && scenario.slick.polygon.length > 2 && (
+            {/* 1. Dynamic Oil Slick Polygon (Animates along drift currents) */}
+            {showSlick && dynamicSlick.polygon.length > 2 && (
               <Polygon
-                positions={scenario.slick.polygon}
+                positions={dynamicSlick.polygon}
                 pathOptions={{
-                  color: '#dc2626',
+                  color: timeOffsetHours > 0 ? '#f59e0b' : timeOffsetHours < 0 ? '#38bdf8' : '#dc2626',
                   weight: 3,
-                  fillColor: '#ef4444',
-                  fillOpacity: timeOffsetHours === 0 ? 0.65 : 0.35,
-                  dashArray: timeOffsetHours === 0 ? undefined : '4, 4',
+                  fillColor: timeOffsetHours > 0 ? '#f59e0b' : timeOffsetHours < 0 ? '#0284c7' : '#ef4444',
+                  fillOpacity: timeOffsetHours === 0 ? 0.70 : 0.45,
+                  dashArray: timeOffsetHours === 0 ? undefined : '5, 5',
                 }}
               >
                 <Popup>
                   <div className="p-2 text-xs text-slate-800 space-y-1.5">
-                    <div className="font-bold text-red-600 border-b pb-1 flex items-center justify-between">
-                      <span>Oil Spill Detection (Sentinel-1 SAR)</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-mono">U-Net</span>
+                    <div className="font-bold border-b pb-1 flex items-center justify-between">
+                      <span className={timeOffsetHours > 0 ? 'text-amber-700' : timeOffsetHours < 0 ? 'text-sky-700' : 'text-red-600'}>
+                        {timeOffsetHours > 0 ? `Forward Drift Forecast (T+${timeOffsetHours}h)` : timeOffsetHours < 0 ? `Hindcast Backtrack (T${timeOffsetHours}h)` : 'Oil Spill Detection (T₀ SAR)'}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">
+                        {timeOffsetHours === 0 ? 'Satellite Snapshot' : 'Lagrangian Physics'}
+                      </span>
                     </div>
-                    <div>Estimated Surface Area: <b>{scenario.slick.area_km2.toFixed(2)} km²</b></div>
+                    <div>Estimated Surface Area: <b>{(scenario.slick.area_km2 * (timeOffsetHours > 0 ? 1 + (timeOffsetHours / 24) * 0.4 : 1)).toFixed(2)} km²</b></div>
                     <div>Perimeter: <b>{scenario.slick.perimeter_km.toFixed(2)} km</b></div>
-                    <div>SAR Likelihood Confidence: <b>{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</b></div>
-                    <div>Weathering Stage: <span className="capitalize font-semibold text-amber-800">{scenario.slick.age_class}</span></div>
+                    <div>Confidence: <b>{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</b></div>
                     <div className="text-[11px] font-mono text-slate-600 pt-1 border-t">
-                      Centroid: {scenario.slick.centroid_lat.toFixed(4)}°N, {scenario.slick.centroid_lon.toFixed(4)}°E
+                      Drift Centroid: {dynamicSlick.centroid[0].toFixed(4)}°N, {dynamicSlick.centroid[1].toFixed(4)}°E
                     </div>
                   </div>
                 </Popup>
               </Polygon>
             )}
 
-            {/* Slick Centroid Pulsing Beacon Marker */}
+            {/* Dynamic Slick Centroid Pulsing Beacon */}
             {showSlick && (
               <>
                 <CircleMarker
-                  center={[scenario.slick.centroid_lat, scenario.slick.centroid_lon]}
+                  center={dynamicSlick.centroid}
                   radius={7}
-                  pathOptions={{ color: '#ffffff', fillColor: '#ef4444', fillOpacity: 1, weight: 2 }}
+                  pathOptions={{
+                    color: '#ffffff',
+                    fillColor: timeOffsetHours > 0 ? '#f59e0b' : timeOffsetHours < 0 ? '#38bdf8' : '#ef4444',
+                    fillOpacity: 1,
+                    weight: 2,
+                  }}
                 >
                   <Popup>
                     <div className="p-1 text-xs text-slate-800 font-semibold">
-                      Spill Core Centroid: {scenario.slick.centroid_lat.toFixed(4)}°N, {scenario.slick.centroid_lon.toFixed(4)}°E
+                      Spill Core Position ({timeOffsetHours > 0 ? `+${timeOffsetHours}h` : `${timeOffsetHours}h`}): {dynamicSlick.centroid[0].toFixed(4)}°N, {dynamicSlick.centroid[1].toFixed(4)}°E
                     </div>
                   </Popup>
                 </CircleMarker>
                 <CircleMarker
-                  center={[scenario.slick.centroid_lat, scenario.slick.centroid_lon]}
+                  center={dynamicSlick.centroid}
                   radius={16}
-                  pathOptions={{ color: '#ef4444', fillColor: 'transparent', fillOpacity: 0, weight: 1.5, dashArray: '4, 4' }}
+                  pathOptions={{
+                    color: timeOffsetHours > 0 ? '#f59e0b' : timeOffsetHours < 0 ? '#38bdf8' : '#ef4444',
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    weight: 1.5,
+                    dashArray: '4, 4',
+                  }}
                 />
               </>
             )}

@@ -4,144 +4,144 @@
   "slick": {
     "slick_id": "mumbai_flagship_spill",
     "centroid_lat": 18.87568,
-    "centroid_lon": 72.82357,
+    "centroid_lon": 72.67357,
     "timestamp": "2024-01-03T10:00:00",
     "polygon": [
       [
         18.9875,
-        72.83594
+        72.68594
       ],
       [
         18.97969,
-        72.82188
+        72.67188
       ],
       [
         18.97188,
-        72.82188
+        72.67188
       ],
       [
         18.96406,
-        72.82969
+        72.67969
       ],
       [
         18.95625,
-        72.82812
+        72.67812
       ],
       [
         18.95,
-        72.8375
+        72.6875
       ],
       [
         18.93906,
-        72.82969
+        72.67969
       ],
       [
         18.93125,
-        72.82969
+        72.67969
       ],
       [
         18.92031,
-        72.81406
+        72.66406
       ],
       [
         18.9125,
-        72.81562
+        72.66562
       ],
       [
         18.90469,
-        72.80781
+        72.65781
       ],
       [
         18.89688,
-        72.80938
+        72.65938
       ],
       [
         18.89531,
-        72.82656
+        72.67656
       ],
       [
         18.88594,
-        72.81875
+        72.66875
       ],
       [
         18.86719,
-        72.81562
+        72.66562
       ],
       [
         18.87031,
-        72.82656
+        72.67656
       ],
       [
         18.86406,
-        72.82812
+        72.67812
       ],
       [
         18.82344,
-        72.79844
+        72.64844
       ],
       [
         18.81563,
-        72.77344
+        72.62344
       ],
       [
         18.80937,
-        72.76875
+        72.61875
       ],
       [
         18.81094,
-        72.75781
+        72.60781
       ],
       [
         18.80313,
-        72.75938
+        72.60938
       ],
       [
         18.79375,
-        72.74375
+        72.59375
       ],
       [
         18.79375,
-        72.76094
+        72.61094
       ],
       [
         18.78125,
-        72.77031
+        72.62031
       ],
       [
         18.79063,
-        72.79844
+        72.64844
       ],
       [
         18.81875,
-        72.82812
+        72.67812
       ],
       [
         18.85625,
-        72.84531
+        72.69531
       ],
       [
         18.87813,
-        72.84375
+        72.69375
       ],
       [
         18.89688,
-        72.86563
+        72.71563
       ],
       [
         18.90938,
-        72.85469
+        72.70469
       ],
       [
         18.925,
-        72.87031
+        72.72031
       ],
       [
         18.95156,
-        72.85781
+        72.70781
       ],
       [
         18.97188,
-        72.83594
+        72.68594
       ]
     ],
     "area_km2": 77.87,
@@ -153,7 +153,7 @@
   "origin": {
     "slick_id": "mumbai_flagship_spill",
     "center_lat": 19.29146706477066,
-    "center_lon": 72.73601124795387,
+    "center_lon": 72.58601,
     "radius_km": 4.08,
     "time_start": "2023-12-31T09:00:00",
     "time_end": "2023-12-31T11:00:00",
@@ -164,151 +164,151 @@
     "points": [
       {
         "lat": 18.87568,
-        "lon": 72.82357,
+        "lon": 72.67357,
         "timestamp": "2024-01-03T10:00:00",
         "uncertainty_km": 0.0
       },
       {
         "lat": 18.88157717184854,
-        "lon": 72.82690849173743,
+        "lon": 72.67691,
         "timestamp": "2024-01-03T10:30:00",
         "uncertainty_km": 2.71
       },
       {
         "lat": 18.88069062688316,
-        "lon": 72.83358880216122,
+        "lon": 72.68359,
         "timestamp": "2024-01-03T11:00:00",
         "uncertainty_km": 2.66
       },
       {
         "lat": 18.8778753679647,
-        "lon": 72.83861382755738,
+        "lon": 72.68861,
         "timestamp": "2024-01-03T11:30:00",
         "uncertainty_km": 2.71
       },
       {
         "lat": 18.874888780752805,
-        "lon": 72.84352532639963,
+        "lon": 72.69353,
         "timestamp": "2024-01-03T12:00:00",
         "uncertainty_km": 2.78
       },
       {
         "lat": 18.86934438597768,
-        "lon": 72.84553269294484,
+        "lon": 72.69553,
         "timestamp": "2024-01-03T12:30:00",
         "uncertainty_km": 2.85
       },
       {
         "lat": 18.86379999120255,
-        "lon": 72.84753999401562,
+        "lon": 72.69754,
         "timestamp": "2024-01-03T13:00:00",
         "uncertainty_km": 2.91
       },
       {
         "lat": 18.856697725328853,
-        "lon": 72.84763687424231,
+        "lon": 72.69764,
         "timestamp": "2024-01-03T13:30:00",
         "uncertainty_km": 2.95
       },
       {
         "lat": 18.849416267429902,
-        "lon": 72.84772497270859,
+        "lon": 72.69772,
         "timestamp": "2024-01-03T14:00:00",
         "uncertainty_km": 3.02
       },
       {
         "lat": 18.84201749554147,
-        "lon": 72.84725215957643,
+        "lon": 72.69725,
         "timestamp": "2024-01-03T14:30:00",
         "uncertainty_km": 3.05
       },
       {
         "lat": 18.83457569419684,
-        "lon": 72.84677315960826,
+        "lon": 72.69677,
         "timestamp": "2024-01-03T15:00:00",
         "uncertainty_km": 3.05
       },
       {
         "lat": 18.82761621505986,
-        "lon": 72.8461905681522,
+        "lon": 72.69619,
         "timestamp": "2024-01-03T15:30:00",
         "uncertainty_km": 3.05
       },
       {
         "lat": 18.820656735922874,
-        "lon": 72.84560800082886,
+        "lon": 72.69561,
         "timestamp": "2024-01-03T16:00:00",
         "uncertainty_km": 3.05
       },
       {
         "lat": 18.817785142997092,
-        "lon": 72.84553641779442,
+        "lon": 72.69554,
         "timestamp": "2024-01-03T16:30:00",
         "uncertainty_km": 2.99
       },
       {
         "lat": 18.814968121549665,
-        "lon": 72.84349867506248,
+        "lon": 72.6935,
         "timestamp": "2024-01-03T17:00:00",
         "uncertainty_km": 2.91
       },
       {
         "lat": 18.818300394530056,
-        "lon": 72.84265791969995,
+        "lon": 72.69266,
         "timestamp": "2024-01-03T17:30:00",
         "uncertainty_km": 2.67
       },
       {
         "lat": 18.813240187230278,
-        "lon": 72.84201698079602,
+        "lon": 72.69202,
         "timestamp": "2024-01-03T18:00:00",
         "uncertainty_km": 2.67
       },
       {
         "lat": 18.80940164392607,
-        "lon": 72.8429411661924,
+        "lon": 72.69294,
         "timestamp": "2024-01-03T18:30:00",
         "uncertainty_km": 2.67
       },
       {
         "lat": 18.809776989499284,
-        "lon": 72.8487962568327,
+        "lon": 72.6988,
         "timestamp": "2024-01-03T19:00:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.807161605365547,
-        "lon": 72.85102161262645,
+        "lon": 72.70102,
         "timestamp": "2024-01-03T19:30:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.804546221231806,
-        "lon": 72.85324693382276,
+        "lon": 72.70325,
         "timestamp": "2024-01-03T20:00:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.802455934631507,
-        "lon": 72.85594221792277,
+        "lon": 72.70594,
         "timestamp": "2024-01-03T20:30:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.800365648031203,
-        "lon": 72.85863746854186,
+        "lon": 72.70864,
         "timestamp": "2024-01-03T21:00:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.79837742068864,
-        "lon": 72.8617812708388,
+        "lon": 72.71178,
         "timestamp": "2024-01-03T21:30:00",
         "uncertainty_km": 1.42
       },
       {
         "lat": 18.796389193346087,
-        "lon": 72.86492503599887,
+        "lon": 72.71493,
         "timestamp": "2024-01-03T22:00:00",
         "uncertainty_km": 1.42
       }
@@ -382,63 +382,63 @@
       "positions": [
         {
           "lat": 18.94147,
-          "lon": 72.43601,
+          "lon": 72.28601,
           "timestamp": "2023-12-31T04:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.0051,
-          "lon": 72.49056,
+          "lon": 72.34056,
           "timestamp": "2023-12-31T05:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.06874,
-          "lon": 72.5451,
+          "lon": 72.3951,
           "timestamp": "2023-12-31T06:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.13238,
-          "lon": 72.59965,
+          "lon": 72.44965,
           "timestamp": "2023-12-31T07:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.19601,
-          "lon": 72.65419,
+          "lon": 72.50419,
           "timestamp": "2023-12-31T08:00:00",
           "speed_over_ground": 3.2,
           "course_over_ground": 42.0
         },
         {
           "lat": 19.25965,
-          "lon": 72.70874,
+          "lon": 72.55874,
           "timestamp": "2023-12-31T09:00:00",
           "speed_over_ground": 3.2,
           "course_over_ground": 42.0
         },
         {
           "lat": 19.51419,
-          "lon": 72.92692,
+          "lon": 72.77692,
           "timestamp": "2023-12-31T13:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.57783,
-          "lon": 72.98147,
+          "lon": 72.83147,
           "timestamp": "2023-12-31T14:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
         },
         {
           "lat": 19.64147,
-          "lon": 73.03601,
+          "lon": 72.88601,
           "timestamp": "2023-12-31T15:00:00",
           "speed_over_ground": 14.2,
           "course_over_ground": 45.0
@@ -452,70 +452,70 @@
       "positions": [
         {
           "lat": 18.89147,
-          "lon": 72.35601,
+          "lon": 72.20601,
           "timestamp": "2023-12-31T05:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 18.98591,
-          "lon": 72.36157,
+          "lon": 72.21157,
           "timestamp": "2023-12-31T06:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.08036,
-          "lon": 72.36712,
+          "lon": 72.21712,
           "timestamp": "2023-12-31T07:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.1748,
-          "lon": 72.37268,
+          "lon": 72.22268,
           "timestamp": "2023-12-31T08:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.26924,
-          "lon": 72.37823,
+          "lon": 72.22823,
           "timestamp": "2023-12-31T09:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.36369,
-          "lon": 72.38379,
+          "lon": 72.23379,
           "timestamp": "2023-12-31T10:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.45813,
-          "lon": 72.38934,
+          "lon": 72.23934,
           "timestamp": "2023-12-31T11:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.55258,
-          "lon": 72.3949,
+          "lon": 72.2449,
           "timestamp": "2023-12-31T12:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.64702,
-          "lon": 72.40046,
+          "lon": 72.25046,
           "timestamp": "2023-12-31T13:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
         },
         {
           "lat": 19.74147,
-          "lon": 72.40601,
+          "lon": 72.25601,
           "timestamp": "2023-12-31T14:00:00",
           "speed_over_ground": 18.5,
           "course_over_ground": 355.0
@@ -529,56 +529,56 @@
       "positions": [
         {
           "lat": 19.34511,
-          "lon": 73.17709,
+          "lon": 73.02709,
           "timestamp": "2023-12-31T06:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 79.3295541981401
         },
         {
           "lat": 19.3388,
-          "lon": 73.17061,
+          "lon": 73.02061,
           "timestamp": "2023-12-31T07:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 292.3540223960785
         },
         {
           "lat": 19.34727,
-          "lon": 73.16614,
+          "lon": 73.01614,
           "timestamp": "2023-12-31T08:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 295.11164217348073
         },
         {
           "lat": 19.35507,
-          "lon": 73.1664,
+          "lon": 73.0164,
           "timestamp": "2023-12-31T09:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 88.18725638476673
         },
         {
           "lat": 19.36155,
-          "lon": 73.16067,
+          "lon": 73.01067,
           "timestamp": "2023-12-31T10:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 266.92813880449546
         },
         {
           "lat": 19.36415,
-          "lon": 73.16922,
+          "lon": 73.01922,
           "timestamp": "2023-12-31T11:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 83.48694789831077
         },
         {
           "lat": 19.37013,
-          "lon": 73.16958,
+          "lon": 73.01958,
           "timestamp": "2023-12-31T12:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 83.36002493414429
         },
         {
           "lat": 19.36345,
-          "lon": 73.16954,
+          "lon": 73.01954,
           "timestamp": "2023-12-31T13:00:00",
           "speed_over_ground": 2.8,
           "course_over_ground": 209.78087062151516
@@ -592,56 +592,56 @@
       "positions": [
         {
           "lat": 19.04147,
-          "lon": 72.53601,
+          "lon": 72.38601,
           "timestamp": "2023-12-30T15:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.1129,
-          "lon": 72.59315,
+          "lon": 72.44315,
           "timestamp": "2023-12-30T16:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.18432,
-          "lon": 72.6503,
+          "lon": 72.5003,
           "timestamp": "2023-12-30T17:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.25575,
-          "lon": 72.70744,
+          "lon": 72.55744,
           "timestamp": "2023-12-30T18:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.32718,
-          "lon": 72.76458,
+          "lon": 72.61458,
           "timestamp": "2023-12-30T19:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.39861,
-          "lon": 72.82173,
+          "lon": 72.67173,
           "timestamp": "2023-12-30T20:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.47004,
-          "lon": 72.87887,
+          "lon": 72.72887,
           "timestamp": "2023-12-30T21:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
         },
         {
           "lat": 19.54147,
-          "lon": 72.93601,
+          "lon": 72.78601,
           "timestamp": "2023-12-30T22:00:00",
           "speed_over_ground": 12.5,
           "course_over_ground": 40.0
@@ -655,56 +655,56 @@
       "positions": [
         {
           "lat": 19.51147,
-          "lon": 72.83601,
+          "lon": 72.68601,
           "timestamp": "2023-12-31T05:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.51647,
-          "lon": 72.83301,
+          "lon": 72.68301,
           "timestamp": "2023-12-31T06:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.52147,
-          "lon": 72.83001,
+          "lon": 72.68001,
           "timestamp": "2023-12-31T07:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.52647,
-          "lon": 72.82701,
+          "lon": 72.67701,
           "timestamp": "2023-12-31T08:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.53147,
-          "lon": 72.82401,
+          "lon": 72.67401,
           "timestamp": "2023-12-31T09:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.53647,
-          "lon": 72.82101,
+          "lon": 72.67101,
           "timestamp": "2023-12-31T10:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.54147,
-          "lon": 72.81801,
+          "lon": 72.66801,
           "timestamp": "2023-12-31T11:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
         },
         {
           "lat": 19.54647,
-          "lon": 72.81501,
+          "lon": 72.66501,
           "timestamp": "2023-12-31T12:00:00",
           "speed_over_ground": 8.5,
           "course_over_ground": 290.0
