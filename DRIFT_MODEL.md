@@ -243,3 +243,177 @@ In the computational fluid dynamics (CFD) and oceanographic community, several a
   - For **suspect identification (forensic backtracking)**, physical kinematic transport (wind leeway + surface currents) dominates over chemical weathering by more than **$95\%$ of positional displacement**.
   - Our vectorized architecture delivers **sub-second real-time responsiveness** ($< 180\text{ ms}$), enabling judges to scrub timelines back and forth in real-time on the 4D dashboard without lag.
 
+---
+
+## 11. Data Resources, Ingestion Architecture, Timings & Dependency Links
+
+The drift simulation relies on three interconnected streams of external scientific and operational data: **atmospheric winds**, **ocean currents**, and **satellite radar**. Each resource was selected according to rigorous oceanographic standards:
+
+```mermaid
+flowchart LR
+    subgraph SATELLITE["1. Satellite SAR Stream"]
+        S1["ESA Copernicus Sentinel-1\n(C-SAR IW GRDH Mode)"] --> TIF["GeoTIFF Raster (.tif)\n10m Pixel Spacing"]
+    end
+
+    subgraph METOCEAN["2. Metocean Environmental Stream"]
+        ERA5["ECMWF ERA5 Reanalysis\n(10m Wind u10, v10)"] --> CDSAPI["CDS API (cdsapi)\nMonth-Chunked Fetcher"]
+        CMEMS["Copernicus Marine (CMEMS)\n(Surface utotal, vtotal)"] --> CTOOL["Copernicus Marine Toolbox\n(copernicusmarine)"]
+        CDSAPI --> WNC["slick1_wind.nc\n(Hourly NetCDF)"]
+        CTOOL --> CNC["slick1_currents_hourly.nc\n(Hourly NetCDF)"]
+    end
+
+    subgraph AIS_STREAM["3. Maritime Telemetry Stream"]
+        AIS_RAW["AIS Transponder Feeds\n(Class A / Class B Transceivers)"] --> AIS_DB["Spatiotemporal AIS Database\n(MMSI, SOG, COG, Lat/Lon)"]
+    end
+
+    TIF --> UNET["Deep PyTorch U-Net"]
+    UNET --> SLICK["Slick Detection (T0, Centroid, Area)"]
+    SLICK --> DRIFT["Lagrangian Drift Engine (drift_model.py)"]
+    WNC --> DRIFT
+    CNC --> DRIFT
+    DRIFT --> ORIGIN["Origin Window (T - 72h)"]
+    ORIGIN --> ATTR["AIS Attribution Engine (scoring.py)"]
+    AIS_DB --> ATTR
+```
+
+---
+
+### 11.1 Resource 1: ECMWF ERA5 Atmospheric Wind Reanalysis
+
+* **Provider**: European Centre for Medium-Range Weather Forecasts (ECMWF) / Copernicus Climate Change Service (C3S).
+* **Official Portal Link**: [ECMWF ERA5 Single Levels Dataset](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels)
+* **API Documentation**: [CDS API Python Documentation](https://cds.climate.copernicus.eu/how-to-api)
+* **Python Dependency**: [`cdsapi`](https://pypi.org/project/cdsapi/) (`pip install cdsapi`)
+
+#### Why It Was Chosen:
+* **Gold Standard Global Reanalysis**: ERA5 combines vast amounts of historical weather observations (satellites, weather balloons, surface buoys) with advanced 4D-Var data assimilation models.
+* **Near-Surface Neutral Winds**: Directly provides the `u10` (zonal) and `v10` (meridional) wind vectors at $10\text{ meters}$ above sea level, which is the standard reference height required for the **3% wind leeway drift equation**.
+* **Spatial Resolution**: $0.25^\circ \times 0.25^\circ$ ($\approx 31\text{ km}$ grid resolution globally).
+
+#### How It Is Ingested (`environmental_data.py`):
+```python
+import cdsapi
+
+client = cdsapi.Client()
+client.retrieve(
+    "reanalysis-era5-single-levels",
+    {
+        "product_type": "reanalysis",
+        "variable": ["10m_u_component_of_wind", "10m_v_component_of_wind"],
+        "year": year,
+        "month": month,
+        "day": sorted(vals["days"]),
+        "time": sorted(vals["hours"]),
+        "area": [north, west, south, east],  # Bounding box around slick centroid
+        "format": "netcdf",
+    },
+    out_path
+)
+```
+* **Date Chunking Innovation**: Requests are dynamically partitioned by `(year, month)`. This prevents the known CDS API bug where querying multi-month periods generates an astronomical cartesian cross-product of days and hours, causing API timeouts and memory exhaustion.
+
+#### Timing & Temporal Coverage:
+* **Sampling Cadence**: Hourly intervals ($00:00, 01:00, \dots, 23:00\text{ UTC}$).
+* **Simulation Time Window**: $[T_{\text{detection}} - 72\text{ hours}, T_{\text{detection}} + 48\text{ hours}]$ (120 total hourly timesteps).
+* **Data Latency in Real Life**:
+  - *ERA5 Consolidated*: Available with a $2\text{–}3\text{ month}$ latency (ideal for training, calibration, and historical benchmarks).
+  - *ERA5T (Near-Real-Time)*: Available with a $5\text{-day}$ latency.
+  - *Real-Time Operational Alternative*: For real-time Coast Guard operations, ECMWF IFS 10-day High-Resolution (HRES) forecasts ($0.1^\circ$ resolution, $0\text{-hour}$ latency) are dropped into the same `.nc` format.
+
+---
+
+### 11.2 Resource 2: Copernicus Marine Service (CMEMS) Surface Ocean Currents
+
+* **Provider**: European Union Copernicus Marine Environment Monitoring Service (Mercator Ocean International).
+* **Official Portal Link**: [Copernicus Marine Service Portal](https://marine.copernicus.eu/)
+* **Dataset Identifier**: `cmems_mod_glo_phy_anfc_merged-uv_PT1H-i` (Global Ocean Physics Analysis and Forecast, 1-hour surface currents).
+* **API Documentation**: [Copernicus Marine Toolbox Documentation](https://help.marine.copernicus.eu/en/articles/7970514-copernicus-marine-toolbox-introduction)
+* **Python Dependency**: [`copernicusmarine`](https://pypi.org/project/copernicusmarine/) (`pip install copernicusmarine`)
+
+#### Why It Was Chosen:
+* **High-Resolution Hydrodynamics**: Utilizes the Nucleus for European Modelling of the Ocean (NEMO) physics model at $1/12^\circ$ resolution ($\approx 8\text{–}9\text{ km}$ grid resolution globally).
+* **True Surface Layer**: Current data is subsetted specifically at `depth = 0 m` to `depth = 1 m` (the topmost water boundary layer where oil slicks float), capturing the combined barotropic tidal current and baroclinic circulation.
+* **Zonal & Meridional Total Velocity**: Directly outputs `utotal` (East-West current) and `vtotal` (North-South current) in $m/s$.
+
+#### How It Is Ingested (`fetch_currents.py`):
+```python
+import copernicusmarine
+
+copernicusmarine.subset(
+    dataset_id="cmems_mod_glo_phy_anfc_merged-uv_PT1H-i",
+    variables=["utotal", "vtotal"],
+    minimum_longitude=west,
+    maximum_longitude=east,
+    minimum_latitude=south,
+    maximum_latitude=north,
+    start_datetime=start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+    end_datetime=end_time.strftime("%Y-%m-%dT%H:%M:%S"),
+    minimum_depth=0,
+    maximum_depth=1,
+    output_filename=out_path,
+)
+```
+
+#### Timing & Temporal Coverage:
+* **Sampling Cadence**: 1-hour temporal snapshots ($1\text{h}$ instantaneous resolution).
+* **Simulation Time Window**: $[T_{\text{detection}} - 72\text{ hours}, T_{\text{detection}} + 48\text{ hours}]$.
+* **Data Latency in Real Life**: Daily analysis updated every 24 hours + provides a **10-day forward hourly forecast** updated twice daily at 00:00 and 12:00 UTC.
+
+---
+
+### 11.3 Resource 3: Sentinel-1 Synthetic Aperture Radar (SAR) Imagery
+
+* **Provider**: European Space Agency (ESA) Copernicus Programme.
+* **Official Portal Link**: [Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/)
+* **Alternative Cloud Mirror**: [Microsoft Planetary Computer Sentinel-1 RTC](https://planetarycomputer.microsoft.com/dataset/sentinel-1-grd)
+* **Python Dependencies**: [`rasterio`](https://pypi.org/project/rasterio/), [`tifffile`](https://pypi.org/project/tifffile/), [`torch`](https://pytorch.org/)
+
+#### Why It Was Chosen:
+* **All-Weather, Day-and-Night Imaging**: C-band radar ($5.405\text{ GHz}$) penetrates clouds, rain, fog, and darkness, which is vital for monitoring ocean dumping that typically occurs under cloud cover or at night.
+* **Physical Slick Damping**: Mineral oil dampens capillary surface waves (Bragg scattering), creating distinct low-backscatter dark formations on the radar image.
+* **Interferometric Wide (IW) Mode**: Covers a wide swath of $250\text{ km}$ across the ocean with a $10\text{ m} \times 10\text{ m}$ pixel resolution.
+
+#### How It Is Ingested:
+* Stored in cloud-optimized GeoTIFF format (`.tif`).
+* Extracted using `rasterio` with dynamic decimation-on-read (streaming in 64KB chunks), preserving RAM on resource-constrained servers.
+* Fed into our PyTorch Deep U-Net (`models/unet_baseline_local.pth`) running on GPU (CUDA), returning segmented polygon coordinates and area metrics in $< 0.1\text{ seconds}$.
+
+---
+
+### 11.4 Resource 4: AIS (Automatic Identification System) Maritime Telemetry
+
+* **Providers & Networks**:
+  - *Public/Governmental*: DG Shipping India (National AIS Network), Indian Coast Guard NAIS, EMSA SafeSeaNet.
+  - *Commercial Satellite/Terrestrial Providers*: [Spire Maritime](https://spire.com/maritime/), [MarineTraffic](https://www.marinetraffic.com/), [AISHub](https://www.aishub.net/).
+* **Standard**: IMO SOLAS Chapter V, Regulation 19 (mandatory for all commercial vessels $\ge 300\text{ GT}$ and all passenger ships).
+
+#### Parameters & Telemetry Fields:
+* `mmsi`: 9-digit Maritime Mobile Service Identity (unique vessel transponder ID).
+* `vessel_name` & `vessel_type`: Ship registration and hull classification (Crude Oil Tanker, Bulk Carrier, Container Ship, etc.).
+* `latitude` & `longitude`: High-precision WGS84 GPS positions.
+* `speed_over_ground` (SOG): Vessel velocity in knots.
+* `course_over_ground` (COG): Heading in degrees ($0^\circ\text{–}360^\circ$).
+* `timestamp`: High-precision UTC observation time.
+
+#### Timing & Anomaly Identification:
+* **Reporting Cadence**: Transmitted every $2\text{ to }10\text{ seconds}$ while underway at sea, and every $3\text{ minutes}$ while anchored.
+* **Anomaly Detection Logic**:
+  - *Transponder Silence / AIS Blackout*: Gaps $> 2.0\text{ hours}$ between consecutive position reports while traversing open shipping corridors.
+  - *Speed Anomaly*: Sudden deceleration from cruising speed ($12\text{–}18\text{ knots}$) down to drift speeds ($< 5\text{ knots}$) inside the origin window cylinder $\mathcal{C}$, characteristic of illegal bilge or sludge discharging operations.
+
+---
+
+### 11.5 Summary of External Software Dependencies & Links
+
+| Dependency | Package Link | License | Primary Function |
+| :--- | :--- | :--- | :--- |
+| **`cdsapi`** | [pypi.org/project/cdsapi](https://pypi.org/project/cdsapi/) | Apache-2.0 | Programmatic retrieval of ECMWF ERA5 reanalysis wind fields |
+| **`copernicusmarine`** | [pypi.org/project/copernicusmarine](https://pypi.org/project/copernicusmarine/) | MIT | Programmatic subsetting and download of CMEMS ocean currents |
+| **`xarray`** | [pypi.org/project/xarray](https://pypi.org/project/xarray/) | Apache-2.0 | Multi-dimensional labeled array data model for NetCDF files |
+| **`netCDF4`** | [pypi.org/project/netCDF4](https://pypi.org/project/netCDF4/) | MIT | Low-level C/Cython library for NetCDF format reading |
+| **`numpy`** | [pypi.org/project/numpy](https://pypi.org/project/numpy/) | BSD-3-Clause | Core numerical vector math and binary array indexing |
+| **`scipy`** | [pypi.org/project/scipy](https://pypi.org/project/scipy/) | BSD-3-Clause | Spatial metric algorithms and statistical percentile calculations |
+| **`rasterio`** | [pypi.org/project/rasterio](https://pypi.org/project/rasterio/) | BSD-3-Clause | GeoTIFF coordinate reference system (CRS) bounds extraction |
+| **`torch`** | [pytorch.org](https://pytorch.org/) | BSD-3-Clause | Deep learning inference on CUDA GPU for SAR oil slick segmentation |
+| **`pydantic`** | [pypi.org/project/pydantic](https://pypi.org/project/pydantic/) | MIT | Strict data schemas and validation contracts across pipeline |
+
