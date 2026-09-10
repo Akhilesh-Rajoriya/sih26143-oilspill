@@ -173,3 +173,4 @@ flowchart TD
    Ensures the system never crashes when analyzing arbitrary locations worldwide by dynamically modeling seasonal monsoons and tidal oscillations if local NetCDF files are absent.
 5. **Legally Actionable Evidence Export**:
    Transforms raw telemetry and neural network outputs into a formal, printable **Indian Coast Guard Incident Dossier** with verifiable chain-of-custody hashes for rapid maritime enforcement dispatch.
+
