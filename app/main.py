@@ -189,7 +189,7 @@ def run_preset_scenario(region_key: str) -> ScenarioResult:
 
 @app.post("/api/v1/scenarios/analyze-image", response_model=ScenarioResult)
 async def analyze_uploaded_image(
-    file: UploadFile = File(..., description="Uploaded Sentinel-1 SAR raster (.tif, .png, .jpg)"),
+    file: UploadFile = File(..., description="Uploaded Sentinel-1 SAR GeoTIFF (.tif, .tiff)"),
     south: Optional[float] = Form(None),
     north: Optional[float] = Form(None),
     west: Optional[float] = Form(None),
@@ -199,13 +199,21 @@ async def analyze_uploaded_image(
     sector_name: Optional[str] = Form(None),
 ) -> ScenarioResult:
     """
-    Accepts ANY uploaded SAR image from judges/users.
+    Accepts uploaded Sentinel-1 GeoTIFF (.tif, .tiff) rasters.
     Streams directly to disk in 64KB chunks to prevent RAM blowup on 512MB free tier.
     Automatically segments the oil slick, executes adaptive ocean drift physics,
     and returns ranked AIS suspect attribution with new custom maritime sector registration.
     """
     tmp_path = None
     try:
+        # Validate file format
+        orig_name = (file.filename or "").lower()
+        if not (orig_name.endswith(".tif") or orig_name.endswith(".tiff") or orig_name.endswith("_decimated.png")):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file format. Only Sentinel-1 GeoTIFF (.tif, .tiff) files are accepted."
+            )
+
         # 1. Stream uploaded file directly to disk in 64KB chunks (RAM footprint < 100KB)
         file_ext = os.path.splitext(file.filename)[1] or ".tif"
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:

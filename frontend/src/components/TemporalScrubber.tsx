@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Clock, SkipBack, SkipForward } from 'lucide-react';
 
 interface TemporalScrubberProps {
-  timeOffset: number; // in hours: -48 to +24
+  timeOffset: number; // in hours: -72 to +48
   onChangeTimeOffset: (hours: number) => void;
   detectionTimestamp?: string;
 }
@@ -19,7 +19,7 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
     let interval: any = null;
     if (isPlaying) {
       interval = setInterval(() => {
-        if (timeOffset >= 24) {
+        if (timeOffset >= 48) {
           setIsPlaying(false);
         } else {
           onChangeTimeOffset(timeOffset + 1);
@@ -49,7 +49,7 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
         </button>
 
         <button
-          onClick={() => onChangeTimeOffset(Math.max(-48, timeOffset - 1))}
+          onClick={() => onChangeTimeOffset(Math.max(-72, timeOffset - 1))}
           className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all shrink-0"
           title="Step Backward (-1 Hour)"
         >
@@ -57,7 +57,7 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
         </button>
 
         <button
-          onClick={() => onChangeTimeOffset(Math.min(24, timeOffset + 1))}
+          onClick={() => onChangeTimeOffset(Math.min(48, timeOffset + 1))}
           className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all shrink-0"
           title="Step Forward (+1 Hour)"
         >
@@ -90,20 +90,20 @@ export const TemporalScrubber: React.FC<TemporalScrubberProps> = ({
       <div className="flex-1 min-w-0 max-w-2xl px-3 lg:px-6 flex flex-col justify-center space-y-1">
         <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium leading-none">
           <span className={`whitespace-nowrap ${timeOffset < 0 ? 'text-blue-400 font-semibold' : ''}`}>
-            (-48h) Hindcast Origin
+            (-72h) Hindcast Origin
           </span>
           <span className={`whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all ${timeOffset === 0 ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'text-slate-300'}`}>
             Satellite Detection (T₀)
           </span>
           <span className={`whitespace-nowrap ${timeOffset > 0 ? 'text-amber-400 font-semibold' : ''}`}>
-            (+24h) Shoreline Forecast
+            (+48h) Shoreline Forecast
           </span>
         </div>
 
         <input
           type="range"
-          min="-48"
-          max="24"
+          min="-72"
+          max="48"
           step="1"
           value={timeOffset}
           onChange={(e) => onChangeTimeOffset(parseInt(e.target.value))}

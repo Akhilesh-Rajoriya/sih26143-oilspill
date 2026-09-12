@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center space-x-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-emerald-300 font-medium text-[11px] whitespace-nowrap">
-                {health.cuda_accelerated ? 'CUDA GPU' : 'Cloud CPU'}
+                {health.cuda_accelerated ? 'NVIDIA GPU' : 'Cloud CPU'}
               </span>
             </div>
           ) : (

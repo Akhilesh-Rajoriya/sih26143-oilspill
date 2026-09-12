@@ -111,11 +111,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
 
     if (timeOffsetHours > 0) {
-      // Forward Forecast Drift (0h to +24h): Translate slick along forecast trajectory
+      // Forward Forecast Drift (0h to +48h): Translate slick along forecast trajectory
       const points = scenario.forecast.points;
       if (!points || points.length === 0) return { centroid: baseCentroid, polygon: basePolygon };
 
-      const frac = Math.min(1, Math.max(0, timeOffsetHours / 24));
+      const frac = Math.min(1, Math.max(0, timeOffsetHours / 48));
       const exactIdx = frac * (points.length - 1);
       const idx = Math.floor(exactIdx);
       const nextIdx = Math.min(idx + 1, points.length - 1);
@@ -136,11 +136,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       return { centroid: [curLat, curLon] as [number, number], polygon: driftedPolygon };
     } else {
-      // Hindcast Backtracking (0h down to -48h): Backtrack smoothly towards spill origin
+      // Hindcast Backtracking (0h down to -72h): Backtrack smoothly towards spill origin
       const originLat = scenario.origin.center_lat;
       const originLon = scenario.origin.center_lon;
 
-      const frac = Math.min(1, Math.max(0, Math.abs(timeOffsetHours) / 48));
+      const frac = Math.min(1, Math.max(0, Math.abs(timeOffsetHours) / 72));
       const curLat = baseCentroid[0] + frac * (originLat - baseCentroid[0]);
       const curLon = baseCentroid[1] + frac * (originLon - baseCentroid[1]);
 
@@ -160,21 +160,21 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   const dynamicSlick = getDynamicSlickState();
 
-  // Helper to interpolate vessel position along its route based on time offset (-48h to +24h)
+  // Helper to interpolate vessel position along its route based on time offset (-72h to +48h)
   const getInterpolatedVesselPosition = (track: AISTrack) => {
     if (!track.positions || track.positions.length === 0) return null;
     const positions = track.positions;
     if (positions.length === 1) return positions[0];
 
-    // Map timeOffsetHours (-48h to 0h) into route progression
-    // Ships transit across the origin area during the -48h to 0h window
+    // Map timeOffsetHours (-72h to 0h) into route progression
+    // Ships transit across the origin area during the -72h to 0h window
     let progress: number;
-    if (timeOffsetHours <= -48) {
+    if (timeOffsetHours <= -72) {
       progress = 0;
     } else if (timeOffsetHours >= 0) {
       progress = 1;
     } else {
-      progress = (timeOffsetHours + 48) / 48;
+      progress = (timeOffsetHours + 72) / 72;
     }
 
     const exactIdx = progress * (positions.length - 1);
@@ -249,7 +249,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                         {timeOffsetHours === 0 ? 'Satellite Snapshot' : 'Lagrangian Physics'}
                       </span>
                     </div>
-                    <div>Estimated Surface Area: <b>{(scenario.slick.area_km2 * (timeOffsetHours > 0 ? 1 + (timeOffsetHours / 24) * 0.4 : 1)).toFixed(2)} km²</b></div>
+                    <div>Estimated Surface Area: <b>{(scenario.slick.area_km2 * (timeOffsetHours > 0 ? 1 + (timeOffsetHours / 48) * 0.4 : 1)).toFixed(2)} km²</b></div>
                     <div>Perimeter: <b>{scenario.slick.perimeter_km.toFixed(2)} km</b></div>
                     <div>Confidence: <b>{(scenario.slick.oil_likelihood_confidence * 100).toFixed(1)}%</b></div>
                     <div className="text-[11px] font-mono text-slate-600 pt-1 border-t">

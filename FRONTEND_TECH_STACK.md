@@ -139,3 +139,4 @@ Standard web browsers cannot natively display or decode 16-bit satellite GeoTIFF
   - Total production CSS: $\sim 43\text{ KB}$ ($\approx 12\text{ KB}$ gzipped).
 * **Single-Port Production Serving**:
   FastAPI directly mounts `frontend/dist` at `/`, serving both the REST API and the React production bundle from a single unified port (`http://localhost:8000`).
+

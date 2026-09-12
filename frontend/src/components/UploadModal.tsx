@@ -112,32 +112,6 @@ async function optimizeSarRaster(
     }
   }
 
-  // If standard image > 2MB
-  if (file.type.startsWith('image/') && file.size > 2 * 1024 * 1024) {
-    try {
-      onStatusUpdate?.('Resizing image in browser...');
-      const bitmap = await createImageBitmap(file);
-      const maxDim = 512;
-      const scale = Math.max(bitmap.width / maxDim, bitmap.height / maxDim, 1);
-      const outW = Math.round(bitmap.width / scale);
-      const outH = Math.round(bitmap.height / scale);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = outW;
-      canvas.height = outH;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(bitmap, 0, 0, outW, outH);
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (blob) {
-          return { file: new File([blob], file.name, { type: 'image/png' }) };
-        }
-      }
-    } catch (e) {
-      console.warn('Canvas resize fallback:', e);
-    }
-  }
-
   return { file };
 }
 
@@ -217,6 +191,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   ];
 
   const onFileChosen = async (file: File) => {
+    const isTiff = file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff');
+    if (!isTiff) {
+      setErrorMsg('Invalid file format. Only Sentinel-1 GeoTIFF (.tif, .tiff) files are accepted.');
+      setSelectedFile(null);
+      setDetectedBbox(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setSelectedFile(file);
     setDetectedBbox(null); // Clear previous file's coordinates immediately!
     setErrorMsg(null);
@@ -225,20 +208,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     const cleanName = base.toUpperCase();
     setCustomSectorName(cleanName.startsWith('SCENE') ? cleanName : `Scene ${cleanName}`);
 
-    if (file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff')) {
-      try {
-        const tiff = await fromBlob(file);
-        const image = await tiff.getImage();
-        const rawBbox = image.getBoundingBox();
-        if (rawBbox && rawBbox.length === 4) {
-          const [w, s, e, n] = rawBbox;
-          if (s >= -90 && n <= 90 && w >= -180 && e <= 180 && s < n && w < e) {
-            setDetectedBbox({ south: s, north: n, west: w, east: e });
-          }
+    try {
+      const tiff = await fromBlob(file);
+      const image = await tiff.getImage();
+      const rawBbox = image.getBoundingBox();
+      if (rawBbox && rawBbox.length === 4) {
+        const [w, s, e, n] = rawBbox;
+        if (s >= -90 && n <= 90 && w >= -180 && e <= 180 && s < n && w < e) {
+          setDetectedBbox({ south: s, north: n, west: w, east: e });
         }
-      } catch (e) {
-        console.log('No embedded geo tags in GeoTIFF:', e);
       }
+    } catch (e) {
+      console.log('No embedded geo tags in GeoTIFF:', e);
     }
   };
 
@@ -271,12 +252,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleSubmitUpload = async () => {
     if (!selectedFile) {
-      setErrorMsg('Please select a satellite image or GeoTIFF file.');
+      setErrorMsg('Please select a Sentinel-1 GeoTIFF (.tif, .tiff) file.');
       return;
     }
     setErrorMsg(null);
     try {
-      // 1. Optimize GeoTIFF or large image in browser
+      // 1. Optimize GeoTIFF in browser
       const { file: optimizedFile, detectedBbox: embeddedBbox } = await optimizeSarRaster(
         selectedFile,
         (msg) => setStatusMsg(msg)
@@ -300,7 +281,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMsg(
         err.response?.data?.detail ||
         err.message ||
-        'Analysis failed. Please ensure file is a valid image (.tif, .png, .jpg).'
+        'Analysis failed. Please ensure file is a valid Sentinel-1 GeoTIFF (.tif, .tiff).'
       );
     } finally {
       setStatusMsg(null);
@@ -403,7 +384,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                             </span>
                             {b.isGlobalReal && (
                               <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold tracking-wide">
-                                ★ 100% REAL DATA
+                                ★ Real SAR + Real ERA5/CMEMS Physics
                               </span>
                             )}
                           </div>
@@ -425,7 +406,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               {/* Dropzone */}
               <div>
                 <label className="block text-slate-300 font-medium mb-1.5 text-xs">
-                  Sentinel-1 SAR Raster File (.tif, .png, .jpg)
+                  Sentinel-1 SAR GeoTIFF File (.tif, .tiff)
                 </label>
                 <div
                   onDragOver={(e) => {
@@ -447,7 +428,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     ref={fileInputRef}
                     id="sar-file-input"
                     type="file"
-                    accept=".tif,.tiff,.png,.jpg,.jpeg"
+                    accept=".tif,.tiff"
                     onChange={handleFileInput}
                     className="hidden"
                   />
@@ -479,7 +460,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     <>
                       <div className="text-slate-200 font-medium">Click to browse or drop file here</div>
                       <div className="text-[11px] text-slate-400 mt-1">
-                        Accepts GeoTIFF, Sentinel-1 VV/VH radar scenes, PNG, and JPG rasters
+                        Accepts Sentinel-1 VV/VH radar scenes (.tif, .tiff GeoTIFF format only)
                       </div>
                     </>
                   )}
